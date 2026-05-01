@@ -1,0 +1,639 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+  serverTimestamp
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signInWithCustomToken, 
+  signInAnonymously 
+} from 'firebase/auth';
+import { 
+  ShoppingBag, 
+  Fish, 
+  X, 
+  Trash2, 
+  Plus, 
+  CheckCircle2,
+  Menu,
+  Lock,
+  Upload,
+  User,
+  Loader2,
+  Image as ImageIcon,
+  Package,
+  ChevronRight,
+  Phone,
+  Mail,
+  Instagram,
+  Facebook,
+  AlertCircle,
+  Settings
+} from 'lucide-react';
+
+// --- Configuration ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'royal-aqua-premium-v1';
+
+const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [settings, setSettings] = useState({ 
+    logoUrl: '', 
+    bannerUrl: '', 
+    shopName: 'ROYAL AQUA FISHES',
+    shopTagline: 'Premium Quality Ornamental Fish & Solutions',
+    logoFit: 'cover'
+  });
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  // --- Auth & Sync ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) { console.error(err); } 
+      finally { setAuthLoading(false); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubP = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), s => setProducts(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubS = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), s => s.exists() && setSettings(p => ({ ...p, ...s.data() })));
+    const unsubO = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), s => setOrders(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubP(); unsubS(); unsubO(); };
+  }, [user]);
+
+  const addToCart = (p) => {
+    setCart(prev => {
+      const ex = prev.find(i => i.id === p.id);
+      return ex ? prev.map(i => i.id === p.id ? {...i, quantity: i.quantity + 1} : i) : [...prev, {...p, quantity: 1}];
+    });
+  };
+
+  if (authLoading) return <div className="h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-[#00234b]" /></div>;
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#00234b] text-white shadow-xl px-4 py-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-white/10 rounded-full"><Menu className="w-5 h-5" /></button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-[#ffb400] flex items-center justify-center shadow-lg">
+                {settings.logoUrl ? (
+                  <img src={settings.logoUrl} className={`w-full h-full object-${settings.logoFit || 'cover'}`} />
+                ) : <Fish className="text-[#00234b] w-5 h-5" />}
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="font-black text-sm tracking-tight leading-none italic uppercase">{settings.shopName}</h1>
+                <p className="text-[7px] text-[#ffb400] font-bold tracking-widest uppercase mt-0.5">{settings.shopTagline.substring(0, 30)}...</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsOrderHistoryOpen(true)} className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-[#ffb400] transition-colors"><Package className="w-4 h-4" /> My Orders</button>
+            <button onClick={() => setIsCartOpen(true)} className="relative p-2 bg-[#ffb400] text-[#00234b] rounded-full hover:scale-110 transition-transform shadow-lg">
+              <ShoppingBag className="w-5 h-5" />
+              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-white text-red-600 text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-red-600">{cart.reduce((a,b)=>a+b.quantity,0)}</span>}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <header className="pt-20 px-4">
+        <div className="max-w-7xl mx-auto relative h-[300px] md:h-[500px] rounded-[2rem] overflow-hidden shadow-2xl bg-[#00234b]">
+          {settings.bannerUrl ? (
+            <img src={settings.bannerUrl} className="w-full h-full object-cover" />
+          ) : (
+             <div className="w-full h-full bg-gradient-to-tr from-[#00234b] to-[#004a99] opacity-90" />
+          )}
+          <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-center p-6 text-white backdrop-blur-[2px]">
+            <h2 className="text-[10px] md:text-sm font-black text-[#ffb400] tracking-[0.4em] uppercase mb-4 animate-bounce">WELCOME TO</h2>
+            <h1 className="text-4xl md:text-7xl font-black italic tracking-tighter uppercase mb-6 leading-none shadow-black drop-shadow-2xl text-center">{settings.shopName}</h1>
+            <p className="max-w-lg text-[10px] md:text-xs font-medium uppercase tracking-[0.2em] leading-relaxed opacity-90 border-t border-b border-white/20 py-4">{settings.shopTagline}</p>
+            <div className="mt-8">
+               <button onClick={() => window.scrollTo({top: 800, behavior: 'smooth'})} className="px-6 md:px-8 py-3 bg-[#ffb400] text-[#00234b] rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-xl">Shop Now</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-16">
+        {['Fishes', 'Accessories', 'Foods', 'Tanks'].map(cat => {
+          const catProducts = products.filter(p => p.category === cat);
+          if (catProducts.length === 0) return null;
+          return (
+            <section key={cat} className="mb-16">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-[#ffb400] uppercase tracking-[0.4em] mb-1">OUR COLLECTIONS</span>
+                  <h2 className="text-2xl font-black text-[#00234b] uppercase italic tracking-tighter">{cat} <span className="text-[#ffb400]">Products</span></h2>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {catProducts.map(p => (
+                  <div key={p.id} onClick={() => setSelectedProduct(p)} className="bg-white rounded-[2rem] overflow-hidden group shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 flex flex-col p-3 cursor-pointer">
+                    <div className="aspect-square bg-slate-50 rounded-[1.5rem] overflow-hidden mb-4 relative">
+                      <img src={p.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-[8px] font-black text-[#00234b] uppercase">Premium</div>
+                    </div>
+                    <h3 className="text-[11px] font-black text-[#00234b] uppercase px-2 mb-1 truncate">{p.name}</h3>
+                    <div className="mt-auto flex items-center justify-between bg-slate-50 p-2 rounded-2xl group-hover:bg-[#00234b] transition-colors">
+                      <span className="font-black text-blue-900 text-sm ml-2 group-hover:text-white transition-colors">${p.price?.toFixed(2)}</span>
+                      <button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="p-3 bg-[#ffb400] text-[#00234b] hover:bg-white rounded-xl transition-all shadow-md active:scale-95">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </main>
+
+      <footer className="bg-[#00234b] text-white pt-20 pb-10 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 border-b border-white/10 pb-12 mb-12">
+          <div className="col-span-1 md:col-span-1">
+             <div className="flex items-center gap-3 mb-6">
+               <div className="w-12 h-12 bg-white rounded-full p-1 border-2 border-[#ffb400] overflow-hidden">
+                  <img src={settings.logoUrl || ''} className={`w-full h-full object-${settings.logoFit || 'cover'}`} />
+               </div>
+               <span className="font-black italic uppercase text-lg leading-none">{settings.shopName}</span>
+             </div>
+             <p className="text-[10px] text-white/50 font-medium leading-relaxed mb-6 uppercase tracking-wider">{settings.shopTagline}</p>
+          </div>
+          <div>
+            <h4 className="font-black text-xs uppercase mb-6 text-[#ffb400]">Customer Care</h4>
+            <div className="flex flex-col gap-4 text-[10px] font-black uppercase text-white/80 tracking-widest">
+              <a href="tel:9051098057" className="flex items-center gap-3 hover:text-[#ffb400]"><Phone className="w-4 h-4" /> 90510 98057</a>
+              <a href="mailto:royalaquafishes@gmail.com" className="flex items-center gap-3 hover:text-[#ffb400] lowercase"><Mail className="w-4 h-4" /> royalaquafishes@gmail.com</a>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-black text-xs uppercase mb-6 text-[#ffb400]">Follow Us</h4>
+            <div className="flex flex-col gap-4 text-[10px] font-black uppercase text-white/80 tracking-widest">
+              <a href="https://instagram.com/royalaquafishea" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-[#ffb400]"><Instagram className="w-4 h-4" /> royalaquafishea</a>
+              <a href="https://www.facebook.com/share/1CfKwiQeMd/" target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-[#ffb400]"><Facebook className="w-4 h-4" /> Royal Aqua Fishes</a>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-black text-xs uppercase mb-6 text-[#ffb400]">Newsletter</h4>
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+               <input className="bg-transparent flex-1 px-3 py-3 text-[10px] outline-none" placeholder="YOUR EMAIL..." />
+               <button className="px-4 py-3 bg-[#ffb400] text-[#00234b] rounded-lg text-[10px] font-black">JOIN</button>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-[8px] font-black uppercase tracking-[0.4em] opacity-40 text-center gap-4">
+           <span>© 2024 {settings.shopName}. ALL RIGHTS RESERVED.</span>
+           <span>PREMIUM AQUARIUM SOLUTIONS</span>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      {selectedProduct && <ProductDetails p={selectedProduct} onClose={() => setSelectedProduct(null)} onAdd={addToCart} />}
+      {isMenuOpen && <SideMenu onClose={() => setIsMenuOpen(false)} onOpenOwner={() => setIsOwnerModalOpen(true)} />}
+      {isOwnerModalOpen && <OwnerAuth onSuccess={() => { setIsOwnerModalOpen(false); setIsDashboardOpen(true); }} onClose={() => setIsOwnerModalOpen(false)} />}
+      {isDashboardOpen && <Dashboard products={products} orders={orders} settings={settings} onClose={() => setIsDashboardOpen(false)} />}
+      {isCartOpen && <Cart cart={cart} onClose={() => setIsCartOpen(false)} setCart={setCart} onCheckout={() => setIsCheckoutOpen(true)} />}
+      {isOrderHistoryOpen && <OrderHistory orders={orders} user={user} onClose={() => setIsOrderHistoryOpen(false)} />}
+      {isCheckoutOpen && <CheckoutModal cart={cart} user={user} onClose={() => setIsCheckoutOpen(false)} onOrderSuccess={() => { setIsCheckoutOpen(false); setIsCartOpen(false); setCart([]); setIsSuccess(true); }} />}
+      {isSuccess && <SuccessView onBack={() => setIsSuccess(false)} />}
+    </div>
+  );
+}
+
+// --- Components ---
+
+const ProductDetails = ({ p, onClose, onAdd }) => (
+  <div className="fixed inset-0 z-[200] bg-[#00234b]/95 backdrop-blur-xl flex items-center justify-center p-4">
+    <div className="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row shadow-2xl relative">
+      <button onClick={onClose} className="absolute top-6 right-6 z-10 p-3 bg-white/80 rounded-2xl shadow-lg"><X className="w-5 h-5 text-[#00234b]" /></button>
+      <div className="w-full md:w-1/2 aspect-square bg-slate-50">
+        <img src={p.image} className="w-full h-full object-cover" />
+      </div>
+      <div className="w-full md:w-1/2 p-10 flex flex-col">
+        <span className="text-[9px] font-black text-[#ffb400] uppercase tracking-[0.3em] mb-2">{p.category}</span>
+        <h2 className="text-3xl font-black text-[#00234b] uppercase italic tracking-tighter mb-4 leading-none">{p.name}</h2>
+        <div className="flex-1 overflow-y-auto pr-2">
+            <p className="text-[11px] font-medium text-slate-500 leading-relaxed uppercase tracking-wide">
+                {p.description || "Premium quality product carefully selected for your aquarium needs. Durable, safe, and designed to enhance your aquatic experience."}
+            </p>
+        </div>
+        <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-8">
+            <span className="text-3xl font-black text-[#00234b]">${p.price?.toFixed(2)}</span>
+            <button onClick={() => { onAdd(p); onClose(); }} className="px-8 py-4 bg-[#ffb400] text-[#00234b] font-black uppercase text-[10px] tracking-widest rounded-2xl shadow-xl shadow-yellow-500/20 active:scale-95 transition-all">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SideMenu = ({ onClose, onOpenOwner }) => (
+  <div className="fixed inset-0 z-[100] flex">
+    <div className="absolute inset-0 bg-[#00234b]/80 backdrop-blur-md" onClick={onClose} />
+    <div className="relative w-72 bg-white h-full p-8 flex flex-col shadow-2xl">
+      <div className="flex justify-between items-center mb-10 font-black uppercase italic text-[#00234b]">MENU<button onClick={onClose} className="p-2 bg-slate-100 rounded-xl"><X className="w-5 h-5" /></button></div>
+      <div className="flex-1 flex flex-col gap-2">
+        {['Collections', 'Track Order', 'About', 'Contact'].map(link => (
+            <button key={link} className="w-full text-left px-5 py-4 hover:bg-blue-50 rounded-2xl font-black uppercase text-[10px] text-slate-500 tracking-widest transition-all">{link}</button>
+        ))}
+      </div>
+      <div className="mt-auto border-t border-slate-100 pt-8">
+        <button onClick={() => { onClose(); onOpenOwner(); }} className="w-full py-4 bg-[#00234b] text-white font-black uppercase text-[10px] italic rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-blue-900/40"><Lock className="w-4 h-4 text-[#ffb400]" /> Owner Panel</button>
+      </div>
+    </div>
+  </div>
+);
+
+const CheckoutModal = ({ cart, user, onClose, onOrderSuccess }) => {
+  const [form, setForm] = useState({ name: '', phone: '', address: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
+
+  const handlePhoneChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setForm({ ...form, phone: val });
+    if (val.length > 0 && val.length < 10) setError('Mobile number must be exactly 10 digits');
+    else setError('');
+  };
+
+  const submitOrder = async (e) => {
+    e.preventDefault();
+    if (form.phone.length !== 10) { setError('Mobile number must be exactly 10 digits'); return; }
+    setLoading(true);
+    try {
+      localStorage.setItem('last_phone', form.phone);
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), {
+        userId: user?.uid || 'guest',
+        userName: form.name,
+        userPhone: form.phone,
+        userAddress: form.address,
+        items: cart,
+        totalAmount: total,
+        status: 'Pending',
+        createdAt: serverTimestamp()
+      });
+      onOrderSuccess();
+    } catch (e) { alert(e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] bg-[#00234b]/90 backdrop-blur-xl flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-lg p-10 rounded-[3rem] shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-6 right-6 p-3 bg-slate-100 rounded-2xl"><X className="w-5 h-5 text-slate-400" /></button>
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-black uppercase italic text-[#00234b] mb-2">Checkout</h2>
+          <p className="text-[10px] font-black text-[#ffb400] uppercase tracking-[0.3em]">Complete Your Premium Order</p>
+        </div>
+        <form onSubmit={submitOrder} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Full Name</label>
+            <input required className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] focus:border-[#ffb400] outline-none" placeholder="Enter Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Phone Number (10 Digits)</label>
+            <div className="relative">
+              <input required type="tel" className={`w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold text-[11px] outline-none transition-all ${error ? 'border-red-400 bg-red-50' : 'border-slate-100 focus:border-[#ffb400]'}`} placeholder="01XXXXXXXX" value={form.phone} onChange={handlePhoneChange} />
+              <span className={`absolute right-5 top-1/2 -translate-y-1/2 text-[9px] font-black ${form.phone.length === 10 ? 'text-green-500' : 'text-slate-300'}`}>{form.phone.length}/10</span>
+            </div>
+            {error && <p className="text-red-500 text-[8px] font-black uppercase tracking-wider mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {error}</p>}
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Delivery Address</label>
+            <textarea required rows="2" className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] focus:border-[#ffb400] outline-none" placeholder="Your Full Address..." value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+          </div>
+
+          <div className="bg-[#00234b] p-6 rounded-[2rem] flex justify-between items-center my-6 text-white">
+             <span className="text-2xl font-black italic">${total.toFixed(2)}</span>
+             <Package className="w-6 h-6 text-[#ffb400]" />
+          </div>
+
+          <button disabled={loading || form.phone.length !== 10} className={`w-full py-5 font-black uppercase text-[12px] tracking-[0.2em] rounded-2xl transition-all ${loading || form.phone.length !== 10 ? 'bg-slate-100 text-slate-400' : 'bg-[#ffb400] text-[#00234b] shadow-xl hover:scale-[1.02]'}`}>
+            {loading ? <Loader2 className="animate-spin mx-auto" /> : 'PLACE ORDER'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const Dashboard = ({ products, orders, settings, onClose }) => {
+  const [tab, setTab] = useState('orders');
+  const [newP, setNewP] = useState({ name: '', price: '', category: 'Fishes', image: '', description: '' });
+  const [shopSet, setShopSet] = useState(settings);
+  const [loading, setLoading] = useState(false);
+
+  const saveBranding = async () => {
+    setLoading(true);
+    try { 
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config'), shopSet, { merge: true }); 
+        alert("Store settings updated successfully!"); 
+    } catch (e) { alert(e.message); } finally { setLoading(false); }
+  };
+
+  const addProduct = async (e) => {
+    e.preventDefault();
+    if (!newP.image) return alert("Image selection required");
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), { ...newP, price: parseFloat(newP.price), createdAt: serverTimestamp() });
+      setNewP({ name: '', price: '', category: 'Fishes', image: '', description: '' });
+      setTab('inventory');
+    } catch (e) { alert(e.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] bg-[#f8fafc] flex flex-col overflow-hidden">
+      <header className="h-16 bg-[#00234b] text-white flex items-center justify-between px-6 shadow-xl">
+        <div className="flex items-center gap-4">
+            <Settings className="w-5 h-5 text-[#ffb400]" />
+            <h2 className="font-black uppercase tracking-[0.2em] text-[10px] italic">Admin Console</h2>
+        </div>
+        <div className="hidden md:flex bg-white/5 p-1 rounded-2xl gap-1 border border-white/10">
+          {['orders', 'inventory', 'add', 'branding'].map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-[9px] font-black tracking-widest rounded-xl transition-all ${tab === t ? 'bg-[#ffb400] text-[#00234b]' : 'text-white/60'}`}>{t.toUpperCase()}</button>
+          ))}
+        </div>
+        <button onClick={onClose} className="p-2 bg-red-500/20 text-red-400 rounded-xl"><X className="w-5 h-5" /></button>
+      </header>
+      
+      {/* Mobile Tab Nav */}
+      <div className="md:hidden flex bg-white border-b overflow-x-auto">
+         {['orders', 'inventory', 'add', 'branding'].map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`flex-1 px-4 py-4 text-[8px] font-black tracking-widest border-b-2 transition-all ${tab === t ? 'border-[#00234b] text-[#00234b]' : 'border-transparent text-slate-400'}`}>{t.toUpperCase()}</button>
+          ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 md:p-12">
+        <div className="max-w-5xl mx-auto">
+          {tab === 'orders' && (
+            <div className="space-y-4">
+               {orders.length === 0 ? <p className="text-center py-20 text-slate-400 font-black uppercase text-[10px]">No orders yet</p> : 
+                orders.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).map(o => (
+                 <div key={o.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between gap-6">
+                    <div className="flex-1">
+                        <span className="text-[9px] font-black text-[#ffb400] uppercase tracking-widest">ORDER #{o.id.slice(-5)}</span>
+                        <h4 className="font-black text-sm text-[#00234b] uppercase mt-1">{o.userName}</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{o.userPhone} • {o.userAddress}</p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                           {o.items.map((item, idx) => (
+                             <div key={idx} className="flex items-center gap-2 bg-slate-50 border p-2 rounded-xl">
+                                <img src={item.image} className="w-6 h-6 rounded-lg object-cover" />
+                                <span className="text-[9px] font-black uppercase text-[#00234b]">{item.quantity}x {item.name}</span>
+                             </div>
+                           ))}
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end justify-between border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 gap-4">
+                         <select value={o.status} onChange={async e => await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', o.id), { status: e.target.value })} className="bg-[#00234b] text-white text-[10px] font-black p-3 px-6 rounded-xl outline-none w-full md:w-auto">
+                           <option>Pending</option><option>Delivered</option><option>Cancelled</option>
+                         </select>
+                         <span className="text-xl font-black text-[#00234b]">${o.totalAmount?.toFixed(2)}</span>
+                    </div>
+                 </div>
+               ))}
+            </div>
+          )}
+
+          {tab === 'add' && (
+            <div className="max-w-xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
+              <h3 className="text-2xl font-black text-[#00234b] uppercase italic text-center mb-8">New <span className="text-[#ffb400]">Product</span></h3>
+              <form onSubmit={addProduct} className="space-y-5">
+                <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Product Details</label>
+                    <input required placeholder="PRODUCT NAME" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] outline-none" value={newP.name} onChange={e => setNewP({...newP, name: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <input required type="number" step="0.01" placeholder="PRICE ($)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] outline-none" value={newP.price} onChange={e => setNewP({...newP, price: e.target.value})} />
+                  <select className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-[11px] outline-none" value={newP.category} onChange={e => setNewP({...newP, category: e.target.value})}><option>Fishes</option><option>Accessories</option><option>Foods</option><option>Tanks</option></select>
+                </div>
+                <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Description</label>
+                    <textarea placeholder="Write product description here..." className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] outline-none min-h-[100px]" value={newP.description} onChange={e => setNewP({...newP, description: e.target.value})} />
+                </div>
+                <label className="block w-full h-40 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
+                    {newP.image ? <img src={newP.image} className="w-full h-full object-cover" /> : <div className="text-slate-300 text-center"><Upload className="w-8 h-8 mx-auto mb-2" /><span className="text-[9px] font-black">PRODUCT IMAGE</span></div>}
+                    <input type="file" className="hidden" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setNewP({ ...newP, image: await convertToBase64(e.target.files[0]) }); }} />
+                </label>
+                <button disabled={loading} className="w-full py-5 bg-[#00234b] text-[#ffb400] rounded-2xl font-black uppercase text-[12px] tracking-[0.2em] shadow-xl">
+                  {loading ? <Loader2 className="animate-spin mx-auto" /> : 'SAVE PRODUCT'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {tab === 'inventory' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {products.map(p => (
+                <div key={p.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition-all">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-50"><img src={p.image} className="w-full h-full object-cover" /></div>
+                  <div className="flex-1 min-w-0"><h4 className="font-black text-[10px] uppercase text-[#00234b] truncate">{p.name}</h4><p className="text-blue-900 font-black text-xs">${p.price}</p></div>
+                  <button onClick={async () => { if(confirm("Remove item?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', p.id)) }} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'branding' && (
+            <div className="max-w-3xl mx-auto space-y-8 pb-20">
+               <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
+                  <h3 className="text-2xl font-black text-[#00234b] uppercase italic mb-8 border-b pb-4">Store <span className="text-[#ffb400]">Branding</span></h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-6">
+                        <div className="space-y-1">
+                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Store Identity</label>
+                            <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-[11px] outline-none focus:border-[#ffb400]" placeholder="SHOP NAME" value={shopSet.shopName} onChange={e => setShopSet({...shopSet, shopName: e.target.value})} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Store Tagline</label>
+                            <input className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-[11px] outline-none focus:border-[#ffb400]" placeholder="TAGLINE" value={shopSet.shopTagline} onChange={e => setShopSet({...shopSet, shopTagline: e.target.value})} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Logo Crop Style</label>
+                            <select className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-[11px] outline-none" value={shopSet.logoFit} onChange={e => setShopSet({...shopSet, logoFit: e.target.value})}>
+                                <option value="cover">COVER (Fill Entire Circle)</option>
+                                <option value="contain">CONTAIN (Show Full Logo)</option>
+                            </select>
+                        </div>
+                     </div>
+                     <div className="space-y-6">
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Store Logo (Round Preview)</label>
+                           <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                              <div className="w-24 h-24 rounded-full bg-white border-4 border-[#ffb400] shadow-xl overflow-hidden flex items-center justify-center">
+                                 {shopSet.logoUrl ? <img src={shopSet.logoUrl} className={`w-full h-full object-${shopSet.logoFit}`} /> : <Fish className="text-[#00234b] w-8 h-8" />}
+                              </div>
+                              <label className="px-6 py-2 bg-[#00234b] text-white text-[9px] font-black uppercase rounded-full cursor-pointer hover:bg-[#ffb400] hover:text-[#00234b] transition-all">
+                                 UPLOAD LOGO
+                                 <input type="file" className="hidden" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setShopSet({...shopSet, logoUrl: await convertToBase64(e.target.files[0])})}} />
+                              </label>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
+                  <h3 className="text-2xl font-black text-[#00234b] uppercase italic mb-8 border-b pb-4">Hero <span className="text-[#ffb400]">Banner</span></h3>
+                  <div className="space-y-6">
+                     <label className="block w-full h-56 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
+                        {shopSet.bannerUrl ? (
+                            <img src={shopSet.bannerUrl} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="text-slate-300 text-center"><ImageIcon className="w-10 h-10 mx-auto mb-2" /><span className="text-[10px] font-black uppercase">UPLOAD HEADER BANNER</span></div>
+                        )}
+                        <input type="file" className="hidden" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setShopSet({...shopSet, bannerUrl: await convertToBase64(e.target.files[0])})}} />
+                     </label>
+                     <p className="text-[9px] font-bold text-slate-400 text-center uppercase tracking-widest">Recommended size: 1920x800px for high quality display</p>
+                  </div>
+               </div>
+
+               <button disabled={loading} onClick={saveBranding} className="w-full py-6 bg-[#00234b] text-[#ffb400] font-black uppercase text-[14px] tracking-[0.3em] rounded-[2rem] shadow-2xl flex items-center justify-center gap-4">
+                  {loading ? <Loader2 className="animate-spin" /> : <>SAVE ALL STORE SETTINGS <CheckCircle2 className="w-5 h-5" /></>}
+               </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SuccessView = ({ onBack }) => (
+  <div className="fixed inset-0 z-[150] bg-[#00234b] flex flex-col items-center justify-center p-8 text-center">
+    <div className="w-20 h-20 bg-[#ffb400] text-[#00234b] rounded-[1.5rem] flex items-center justify-center mb-8 animate-bounce"><CheckCircle2 className="w-10 h-10" /></div>
+    <h2 className="text-4xl font-black text-white mb-4 uppercase italic tracking-tighter">ORDER PLACED!</h2>
+    <p className="text-[#ffb400] font-black uppercase text-[9px] mb-12 tracking-[0.4em] opacity-80">We will contact you shortly.</p>
+    <button onClick={onBack} className="px-12 py-5 bg-white text-[#00234b] font-black uppercase text-[11px] tracking-[0.2em] rounded-2xl shadow-2xl">BACK TO STORE</button>
+  </div>
+);
+
+const OwnerAuth = ({ onSuccess, onClose }) => {
+  const [pass, setPass] = useState('');
+  return (
+    <div className="fixed inset-0 z-[110] bg-[#00234b]/95 backdrop-blur-2xl flex items-center justify-center p-6">
+      <div className="bg-white w-full max-w-[280px] p-10 text-center rounded-[3rem] shadow-2xl">
+        <div className="w-14 h-14 bg-blue-50 text-[#00234b] rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-inner"><Lock className="w-6 h-6" /></div>
+        <input type="password" placeholder="••••••••" className="w-full p-4 bg-slate-50 rounded-2xl text-center font-black mb-6 outline-none border border-slate-100" value={pass} onChange={e => setPass(e.target.value)} />
+        <button onClick={() => pass === '2010/8/12BA' ? onSuccess() : alert("Wrong Password!")} className="w-full py-4 bg-[#00234b] text-[#ffb400] font-black uppercase text-[11px] rounded-2xl">LOGIN</button>
+        <button onClick={onClose} className="mt-4 text-[8px] font-black text-slate-400 uppercase">CANCEL</button>
+      </div>
+    </div>
+  );
+};
+
+const OrderHistory = ({ orders, user, onClose }) => {
+  const myOrders = orders.filter(o => o.userId === user?.uid || (o.userId === 'guest' && o.userPhone === localStorage.getItem('last_phone')));
+  return (
+    <div className="fixed inset-0 z-[110] bg-[#00234b]/80 backdrop-blur-md flex justify-end">
+      <div className="bg-[#f8fafc] w-full max-w-md h-full p-8 flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-xl font-black uppercase italic text-[#00234b]">My <span className="text-[#ffb400]">Orders</span></h2>
+          <button onClick={onClose} className="p-3 bg-white rounded-2xl"><X className="w-5 h-5 text-slate-400" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto space-y-4">
+          {myOrders.length === 0 ? <p className="text-center opacity-30 mt-20 font-black uppercase text-[10px]">No orders yet</p> : 
+            myOrders.map(o => (
+              <div key={o.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                    <p className="text-[9px] font-black uppercase text-[#00234b]">#{o.id.slice(-5)}</p>
+                    <span className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase ${o.status === 'Delivered' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{o.status}</span>
+                </div>
+                <div className="text-[9px] font-bold text-slate-500 mb-4">{o.items.map(i=>`${i.quantity}x ${i.name}`).join(', ')}</div>
+                <div className="flex justify-between items-center border-t pt-3">
+                    <span className="text-sm font-black text-[#00234b]">${o.totalAmount?.toFixed(2)}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const Cart = ({ cart, onClose, setCart, onCheckout }) => (
+    <div className="fixed inset-0 z-[100] flex justify-end">
+      <div className="absolute inset-0 bg-[#00234b]/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative w-full max-w-[380px] bg-[#f8fafc] h-full flex flex-col shadow-2xl">
+        <div className="p-8 bg-[#00234b] text-white flex justify-between items-center">
+            <span className="font-black uppercase text-xl italic">Cart <span className="text-[#ffb400]">Items</span></span>
+            <button onClick={onClose} className="p-2 bg-white/10 rounded-xl"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+          {cart.map(i => (
+            <div key={i.id} className="flex gap-4 items-center bg-white p-3 rounded-[1.5rem] shadow-sm">
+              <img src={i.image} className="w-12 h-12 rounded-xl object-cover" />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-[10px] font-black uppercase truncate text-[#00234b]">{i.name}</h4>
+                <p className="text-blue-900 font-black text-xs">${(i.price * i.quantity).toFixed(2)}</p>
+              </div>
+              <div className="flex items-center bg-slate-50 p-1 rounded-xl">
+                <button onClick={() => setCart(prev => prev.map(item => item.id === i.id ? {...item, quantity: Math.max(1, item.quantity - 1)} : item))} className="w-6 h-6 flex items-center justify-center font-black">-</button>
+                <span className="px-2 text-[10px] font-black">{i.quantity}</span>
+                <button onClick={() => setCart(prev => prev.map(item => item.id === i.id ? {...item, quantity: item.quantity + 1} : item))} className="w-6 h-6 flex items-center justify-center font-black">+</button>
+              </div>
+              <button onClick={() => setCart(prev => prev.filter(item => item.id !== i.id))} className="text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
+            </div>
+          ))}
+        </div>
+        {cart.length > 0 && (
+          <div className="p-8 bg-white border-t rounded-t-[2.5rem] shadow-2xl">
+            <div className="flex justify-between items-center mb-6 px-2">
+                <span className="text-2xl font-black text-[#00234b] italic">${cart.reduce((s,i)=>s+(i.price*i.quantity),0).toFixed(2)}</span>
+            </div>
+            <button onClick={onCheckout} className="w-full py-5 bg-[#00234b] text-[#ffb400] font-black uppercase text-[12px] tracking-[0.2em] rounded-2xl">PROCEED TO CHECKOUT</button>
+          </div>
+        )}
+      </div>
+    </div>
+);
