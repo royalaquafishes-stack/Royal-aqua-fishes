@@ -14,182 +14,221 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
         }
         .header-bg { background-color: var(--primary-blue); }
         .btn-gold { background-color: var(--accent-gold); color: black; font-weight: bold; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 15px; }
         .hidden { display: none; }
         .owner-modal { background: rgba(0,0,0,0.8); }
+        .loader { 
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Top 3-Line Menu & Navbar -->
+    <!-- Loading Screen -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="loader mb-4"></div>
+        <p class="text-blue-900 font-bold animate-pulse">Royal Aqua Loading...</p>
+    </div>
+
+    <!-- Top Navbar -->
     <header class="header-bg text-white sticky top-0 z-50 shadow-lg">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="text-2xl"><i class="fas fa-bars"></i></button>
-                <img id="webLogo" src="https://via.placeholder.com/150x50?text=LOGO" alt="Logo" class="h-12 w-auto object-contain bg-white rounded p-1">
-                <h1 id="webTitle" class="text-xl font-bold hidden md:block">ROYAL AQUA FISHIES</h1>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="text-2xl p-1"><i class="fas fa-bars"></i></button>
+                <img id="webLogo" src="https://via.placeholder.com/150x50?text=ROYAL+AQUA" alt="Logo" class="h-10 w-auto object-contain bg-white rounded p-1">
+                <h1 class="text-lg font-bold hidden sm:block">ROYAL AQUA</h1>
             </div>
             
-            <div class="flex gap-6 items-center">
-                <button onclick="showPage('home')" class="hover:text-yellow-400 font-medium text-sm md:text-base">Home</button>
-                <button onclick="showPage('cart')" class="relative hover:text-yellow-400">
+            <div class="flex gap-4 items-center">
+                <button onclick="showPage('home')" class="hover:text-yellow-400 font-medium text-sm">Home</button>
+                <button onclick="showPage('cart')" class="relative hover:text-yellow-400 p-2">
                     <i class="fas fa-shopping-cart text-xl"></i>
-                    <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    <span id="cartCount" class="absolute top-0 right-0 bg-red-500 text-[10px] rounded-full h-4 w-4 flex items-center justify-center">0</span>
                 </button>
-                <button onclick="openOwnerLogin()" class="bg-yellow-500 text-black px-3 py-1 rounded text-xs md:text-sm font-bold">Owner</button>
+                <button onclick="openOwnerLogin()" class="bg-yellow-500 text-black px-3 py-1 rounded text-xs font-bold shadow-sm">Owner</button>
             </div>
         </div>
     </header>
 
-    <!-- Sidebar Menu -->
+    <!-- Sidebar -->
     <div id="sidebar" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden" onclick="toggleSidebar()">
-        <div class="bg-white text-black w-64 h-full p-6 space-y-4" onclick="event.stopPropagation()">
-            <h2 class="text-xl font-bold border-b pb-2">Menu</h2>
-            <button onclick="showPage('home'); toggleSidebar()" class="block w-full text-left p-2 hover:bg-gray-100 font-semibold"><i class="fas fa-home mr-2 text-blue-900"></i> Home</button>
-            <button onclick="showPage('orders'); toggleSidebar()" class="block w-full text-left p-2 hover:bg-gray-100 font-semibold"><i class="fas fa-box mr-2 text-blue-900"></i> My Orders</button>
-            <button onclick="showPage('cart'); toggleSidebar()" class="block w-full text-left p-2 hover:bg-gray-100 font-semibold"><i class="fas fa-shopping-cart mr-2 text-blue-900"></i> My Cart</button>
+        <div class="bg-white text-black w-64 h-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center border-b pb-4">
+                <h2 class="text-xl font-bold text-blue-900 italic">Royal Menu</h2>
+                <button onclick="toggleSidebar()" class="text-2xl">&times;</button>
+            </div>
+            <nav class="space-y-2">
+                <button onclick="showPage('home'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-home text-blue-900"></i> Home</button>
+                <button onclick="showPage('orders'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-history text-blue-900"></i> My Orders</button>
+                <button onclick="showPage('cart'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-shopping-bag text-blue-900"></i> My Cart</button>
+            </nav>
         </div>
     </div>
 
-    <!-- Home Page -->
+    <!-- Home Content -->
     <main id="page-home" class="page-content">
-        <!-- Hero Banner -->
-        <section id="heroBanner" class="relative h-[400px] bg-cover bg-center flex items-center text-white" style="background-image: linear-gradient(rgba(0,0,50,0.5), rgba(0,0,50,0.5)), url('https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&w=1350&q=80');">
-            <div class="container mx-auto px-6">
-                <h2 class="text-4xl md:text-5xl font-bold mb-4">Welcome To <br><span class="text-yellow-400">Royal Aqua Fishies</span></h2>
-                <p class="text-base md:text-lg mb-6 max-w-lg">We provide premium quality ornamental fish and aquarium products delivered to your door.</p>
-                <button onclick="scrollToProducts()" class="btn-gold px-8 py-3 rounded-full hover:scale-105 transition-transform shadow-lg">Explore Fish →</button>
+        <section id="heroBanner" class="h-[300px] md:h-[450px] bg-cover bg-center flex items-center justify-center text-center text-white" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&w=1350&q=80');">
+            <div class="px-4">
+                <h2 class="text-3xl md:text-6xl font-black mb-4 tracking-tight uppercase">Royal Aqua Fishies</h2>
+                <p class="text-sm md:text-xl mb-8 opacity-90 font-light">Quality Fish, Better Aquarium, Best Price.</p>
+                <button onclick="scrollToProducts()" class="btn-gold px-8 py-3 rounded-full hover:scale-105 transition-all shadow-xl uppercase text-xs tracking-widest">Shop Now</button>
             </div>
         </section>
 
-        <!-- Categories & Products -->
         <section class="container mx-auto py-12 px-4">
-            <h3 class="text-2xl font-bold text-center mb-8 border-b-2 border-yellow-500 w-fit mx-auto pb-2">Our Products</h3>
-            <div id="productList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Products will be injected here -->
+            <h3 class="text-2xl font-bold text-blue-900 mb-8 flex items-center gap-3">
+                <span class="w-2 h-8 bg-yellow-500 rounded-full"></span> Our Collection
+            </h3>
+            <div id="productList" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <!-- Products -->
             </div>
         </section>
     </main>
 
-    <!-- Cart Page -->
+    <!-- Cart Content -->
     <main id="page-cart" class="page-content container mx-auto py-10 px-4 hidden">
-        <h2 class="text-3xl font-bold mb-6">Your Shopping Cart</h2>
+        <h2 class="text-2xl font-bold mb-6 text-blue-900">Your Cart</h2>
         <div id="cartItems" class="space-y-4"></div>
-        <div id="cartSummary" class="mt-8 p-6 bg-white rounded-lg shadow-md hidden">
-            <div class="flex justify-between text-xl font-bold mb-4">
-                <span>Total:</span>
-                <span id="cartTotal">₹0</span>
+        <div id="cartSummary" class="mt-8 p-6 bg-white rounded-2xl shadow-xl hidden">
+            <div class="flex justify-between text-xl font-bold mb-6">
+                <span>Total Amount:</span>
+                <span id="cartTotal" class="text-blue-900">₹0</span>
             </div>
-            <button onclick="showPage('checkout')" class="w-full bg-blue-900 text-white py-3 rounded-lg font-bold hover:bg-blue-800 transition">Continue to Checkout</button>
+            <button onclick="showPage('checkout')" class="w-full bg-blue-900 text-white py-4 rounded-xl font-bold hover:bg-black transition text-lg">Checkout Order</button>
         </div>
-        <div id="emptyCartMsg" class="text-center py-20 text-gray-500">Apnar cart ekhon khali.</div>
+        <div id="emptyCartMsg" class="text-center py-20 text-gray-400">
+            <i class="fas fa-shopping-cart text-5xl mb-4 opacity-20"></i>
+            <p>Your cart is empty.</p>
+        </div>
     </main>
 
-    <!-- Checkout Page -->
+    <!-- Checkout Content -->
     <main id="page-checkout" class="page-content container mx-auto py-10 px-4 hidden">
-        <div class="max-w-2xl mx-auto glass-card p-8 shadow-xl">
-            <h2 class="text-2xl font-bold mb-6 text-blue-900 text-center">Order Details</h2>
+        <div class="max-w-xl mx-auto bg-white p-6 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
+            <h2 class="text-2xl font-black mb-6 text-blue-900">Shipping Information</h2>
             <form id="checkoutForm" class="space-y-4" onsubmit="handleOrderSubmit(event)">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" placeholder="First Name" required id="fname" class="border p-3 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
-                    <input type="text" placeholder="Surname" required id="lname" class="border p-3 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
+                    <input type="text" placeholder="First Name" required id="fname" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
+                    <input type="text" placeholder="Surname" required id="lname" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
                 </div>
-                <input type="text" placeholder="City or Village" required id="city" class="border p-3 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
                 
-                <select id="stateSelect" required class="border p-3 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
-                    <option value="">Select State</option>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" placeholder="City/Village" required id="city" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
+                    <input type="number" placeholder="Pin Code" required id="pincode" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
+                </div>
+
+                <select id="state" required class="border p-3 rounded-xl w-full outline-none bg-white focus:border-blue-900">
+                    <option value="" disabled selected>Select State</option>
                     <option value="West Bengal">West Bengal</option>
-                    <option value="Bihar">Bihar</option>
-                    <option value="Odisha">Odisha</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
                     <option value="Assam">Assam</option>
-                    <option value="Delhi">Delhi</option>
-                    <!-- Others truncated for brevity but logic remains -->
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
                     <option value="Other">Other</option>
                 </select>
 
-                <input type="number" placeholder="Pin Code" required id="pincode" class="border p-3 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
-                <textarea placeholder="Full Address" required id="address" class="border p-3 rounded-md w-full h-24 focus:ring-2 focus:ring-blue-900 outline-none"></textarea>
+                <textarea placeholder="Full Address with Landmark" required id="address" class="border p-3 rounded-xl w-full h-24 outline-none focus:border-blue-900"></textarea>
                 
-                <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <p class="text-xs text-yellow-800 font-bold mb-2 uppercase">Your WhatsApp Number</p>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-gray-500 font-semibold">+91</span>
-                        <input type="tel" placeholder="10 Digit Number" required id="customerWhatsapp" pattern="[0-9]{10}" class="border p-3 pl-12 rounded-md w-full focus:ring-2 focus:ring-blue-900 outline-none">
-                    </div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <label class="text-[10px] font-bold text-blue-500 uppercase tracking-wider">WhatsApp Number</label>
+                    <input type="tel" placeholder="10 Digit Number" required id="customerWhatsapp" pattern="[0-9]{10}" class="bg-transparent border-b-2 border-blue-200 w-full py-2 outline-none focus:border-blue-900 transition-colors">
                 </div>
-                
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 shadow-md flex items-center justify-center gap-2">
-                    <i class="fab fa-whatsapp text-xl"></i> Confirm Order via WhatsApp
+
+                <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-green-700 transition shadow-lg">
+                    <i class="fab fa-whatsapp text-2xl"></i> Send Order to WhatsApp
                 </button>
+                <button type="button" onclick="showPage('cart')" class="w-full text-gray-500 font-bold py-2 text-sm">Back to Cart</button>
             </form>
         </div>
     </main>
 
-    <!-- Orders Page -->
+    <!-- Orders History -->
     <main id="page-orders" class="page-content container mx-auto py-10 px-4 hidden">
-        <h2 class="text-3xl font-bold mb-6 text-blue-900">My Orders</h2>
+        <h2 class="text-2xl font-bold mb-6 text-blue-900">Your Orders</h2>
         <div id="userOrdersList" class="space-y-4"></div>
     </main>
 
-    <!-- Owner Panel Modal -->
+    <!-- Admin Panel -->
     <div id="ownerPanel" class="fixed inset-0 z-[100] hidden owner-modal overflow-y-auto">
-        <div class="bg-white w-full max-w-5xl mx-auto my-10 p-8 rounded-xl shadow-2xl">
-            <div class="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 class="text-2xl font-bold text-blue-900">Admin Owner Panel</h2>
-                <button onclick="closeOwnerPanel()" class="text-red-500 text-2xl font-bold">&times;</button>
-            </div>
+        <div class="bg-white w-full max-w-5xl mx-auto my-5 p-6 rounded-3xl shadow-2xl relative">
+            <button onclick="closeOwnerPanel()" class="absolute top-4 right-6 text-3xl">&times;</button>
+            <h2 class="text-2xl font-black text-blue-900 mb-8 border-b pb-4 text-center italic uppercase">Royal Dashboard</h2>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="space-y-6 border-r pr-0 lg:pr-6 border-gray-200">
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h3 class="font-bold text-gray-700 mb-3 border-b pb-1">Web Appearance</h3>
+                <div class="space-y-6">
+                    <div class="bg-gray-50 p-5 rounded-2xl border">
+                        <h3 class="font-bold mb-4 flex items-center gap-2 text-sm uppercase text-gray-500"><i class="fas fa-palette"></i> Branding Update</h3>
                         <div class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-gray-600 mb-1">Update Logo</label>
-                                <input type="file" id="logoUpload" accept="image/*" class="w-full text-xs p-1">
-                                <button onclick="uploadWebImg('logo')" class="mt-2 text-xs bg-blue-600 text-white px-4 py-2 rounded font-bold">Apply Logo</button>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-600 mb-1">Update Banner</label>
-                                <input type="file" id="bannerUpload" accept="image/*" class="w-full text-xs p-1">
-                                <button onclick="uploadWebImg('banner')" class="mt-2 text-xs bg-blue-600 text-white px-4 py-2 rounded font-bold">Apply Banner</button>
-                            </div>
+                            <label class="block text-[10px] font-bold text-gray-400">SELECT LOGO</label>
+                            <input type="file" id="logoUpload" accept="image/*" class="text-xs w-full">
+                            <button onclick="uploadBranding('logo')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Save Logo</button>
+                            
+                            <label class="block text-[10px] font-bold text-gray-400 mt-4">SELECT HERO BANNER</label>
+                            <input type="file" id="bannerUpload" accept="image/*" class="text-xs w-full">
+                            <button onclick="uploadBranding('banner')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Save Banner</button>
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <h3 class="font-bold text-blue-900 mb-3 border-b border-blue-200 pb-1">Manage Product</h3>
-                        <form id="addProductForm" onsubmit="saveProduct(event)" class="space-y-3">
-                            <input type="hidden" id="editProductId">
-                            <input type="text" id="pName" placeholder="Product Name" required class="w-full border p-2 rounded">
-                            <input type="number" id="pPrice" placeholder="Price (₹)" required class="w-full border p-2 rounded">
-                            <textarea id="pDesc" placeholder="Description" required class="w-full border p-2 h-20 rounded"></textarea>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-600 mb-1">Product Image</label>
-                                <input type="file" id="pImgUpload" accept="image/*" class="w-full text-xs">
-                                <div id="pImgPreview" class="mt-2 hidden"><img src="" class="h-20 w-20 object-cover rounded shadow"></div>
-                            </div>
+                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
+                        <h3 class="font-bold mb-4 text-sm uppercase text-blue-900">Product Management</h3>
+                        <form id="addProductForm" onsubmit="saveToFirebase(event)" class="space-y-3">
+                            <input type="hidden" id="editId">
+                            <input type="text" id="pName" placeholder="Fish Name" required class="w-full p-3 rounded-xl border text-sm">
+                            <input type="number" id="pPrice" placeholder="Price (₹)" required class="w-full p-3 rounded-xl border text-sm">
+                            <textarea id="pDesc" placeholder="Description" required class="w-full p-3 rounded-xl border h-20 text-sm"></textarea>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase">Product Image</label>
+                            <input type="file" id="pImgFile" accept="image/*" class="text-xs w-full">
+                            <div id="pPreview" class="hidden mt-2"><img src="" class="h-20 rounded shadow"></div>
                             <div class="flex items-center gap-2 py-2">
-                                <label class="text-sm font-bold">In Stock:</label>
-                                <input type="checkbox" id="pAvailable" checked class="w-5 h-5">
+                                <label class="text-xs font-bold">In Stock?</label>
+                                <input type="checkbox" id="pStock" checked class="w-5 h-5 accent-blue-900">
                             </div>
-                            <button type="submit" id="submitProductBtn" class="w-full bg-green-600 text-white py-3 rounded font-bold shadow-md">Save Product</button>
-                            <button type="button" onclick="resetForm()" class="w-full bg-gray-400 text-white py-2 rounded text-sm font-bold">Cancel</button>
+                            <button type="submit" id="saveBtn" class="w-full bg-blue-900 text-white py-3 rounded-xl font-bold shadow-lg uppercase tracking-wider">Save Product</button>
+                            <button type="button" onclick="resetAdminForm()" class="w-full text-xs text-gray-400 font-bold py-2">Reset Form</button>
                         </form>
                     </div>
                 </div>
 
                 <div>
-                    <h3 class="font-bold text-gray-700 mb-4 flex items-center gap-2"><i class="fas fa-list"></i> Shop Data</h3>
-                    <div class="flex gap-2 mb-4">
-                        <button onclick="toggleAdminTab('inventory')" class="flex-1 py-2 rounded font-bold text-sm bg-blue-900 text-white transition" id="btnInv">Inventory</button>
-                        <button onclick="toggleAdminTab('adminOrders')" class="flex-1 py-2 rounded font-bold text-sm bg-gray-200 text-gray-700 transition" id="btnOrd">Orders</button>
+                    <div class="flex gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
+                        <button onclick="toggleAdminTab('inv')" id="tabInv" class="flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs">Inventory</button>
+                        <button onclick="toggleAdminTab('ord')" id="tabOrd" class="flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs">Orders</button>
                     </div>
-                    <div id="adminInventory" class="max-h-[600px] overflow-y-auto space-y-3 pr-2"></div>
-                    <div id="adminOrdersTab" class="hidden max-h-[600px] overflow-y-auto space-y-3 pr-2"></div>
+                    <div id="adminInv" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
+                    <div id="adminOrd" class="hidden space-y-3 max-h-[600px] overflow-y-auto"></div>
                 </div>
             </div>
         </div>
@@ -197,365 +236,389 @@
 
     <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 z-[110] owner-modal flex items-center justify-center hidden">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-80 text-center">
-            <h2 class="text-xl font-bold mb-4">Owner Login</h2>
-            <input type="password" id="ownerPass" placeholder="Enter Password" class="border p-2 w-full mb-4 rounded text-center">
-            <div class="flex gap-2">
-                <button onclick="verifyOwner()" class="flex-1 bg-blue-900 text-white py-2 rounded font-bold">Login</button>
-                <button onclick="closeLogin()" class="flex-1 bg-gray-200 py-2 rounded font-bold">Cancel</button>
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-80 text-center">
+            <h2 class="text-xl font-bold mb-6 text-blue-900 uppercase tracking-widest">Admin Login</h2>
+            <input type="password" id="adminPass" placeholder="Enter PIN" class="border-2 p-3 w-full mb-6 rounded-xl text-center focus:border-blue-900 outline-none text-xl tracking-widest">
+            <div class="flex flex-col gap-2">
+                <button onclick="checkAdmin()" class="bg-blue-900 text-white py-3 rounded-xl font-bold">Login</button>
+                <button onclick="closeLogin()" class="text-gray-400 py-2">Close</button>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer class="header-bg text-white py-12 mt-20">
-        <div class="container mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-            <div class="col-span-1 text-center md:text-left">
-                <h3 class="text-xl font-bold mb-4">Royal Aqua Fishies</h3>
-                <p class="text-gray-400 text-sm">Better fish for a better aquarium. Premium quality collections available.</p>
-                <div class="mt-4 text-sm">
-                    <p><i class="fas fa-phone-alt mr-2 text-yellow-400"></i> 90510 98057</p>
-                    <p><i class="fas fa-envelope mr-2 text-yellow-400"></i> royalaquafishes@gmail.com</p>
+        <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
+            <div class="space-y-4">
+                <h3 class="text-2xl font-black italic tracking-tighter uppercase">Royal Aqua</h3>
+                <p class="text-gray-400 text-xs leading-relaxed">Providing high-quality ornamental fishes and accessories. Your satisfaction is our pride.</p>
+                <div class="flex justify-center md:justify-start gap-4">
+                    <a href="https://wa.me/919051098057" target="_blank" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://www.facebook.com/share/1CfKwiQeMd/" target="_blank" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://www.instagram.com/royalaquafishes" target="_blank" class="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.youtube.com/channel/UC3rGXGD66Aoef2sR1vu3-dQ" target="_blank" class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-youtube"></i></a>
                 </div>
             </div>
-            <div class="text-center md:text-left">
-                <h4 class="font-bold mb-4">Explore</h4>
-                <ul class="text-gray-400 text-sm space-y-2">
-                    <li><button onclick="showPage('home')">Home</button></li>
-                    <li><button onclick="showPage('orders')">My Orders</button></li>
-                    <li><button onclick="showPage('cart')">Cart</button></li>
+            
+            <div>
+                <h4 class="font-bold text-yellow-400 text-sm mb-4 uppercase tracking-widest">Shop Info</h4>
+                <ul class="text-gray-400 text-xs space-y-3">
+                    <li><button onclick="showPage('home')">Browse Products</button></li>
+                    <li><button onclick="showPage('cart')">Shopping Cart</button></li>
+                    <li><button onclick="showPage('orders')">Track Order</button></li>
                 </ul>
             </div>
-            <div class="text-center md:text-left">
-                <h4 class="font-bold mb-4">Follow Us</h4>
-                <div class="flex justify-center md:justify-start gap-4 text-2xl">
-                    <a href="https://www.facebook.com/share/1CfKwiQeMd/" target="_blank" class="hover:text-blue-500"><i class="fab fa-facebook"></i></a>
-                    <a href="https://www.instagram.com/royalaquafishes" target="_blank" class="hover:text-pink-500"><i class="fab fa-instagram"></i></a>
-                    <a href="https://www.youtube.com/channel/UC3rGXGD66Aoef2sR1vu3-dQ" target="_blank" class="hover:text-red-500"><i class="fab fa-youtube"></i></a>
-                    <a href="https://wa.me/919051098057" target="_blank" class="hover:text-green-500"><i class="fab fa-whatsapp"></i></a>
+
+            <div>
+                <h4 class="font-bold text-yellow-400 text-sm mb-4 uppercase tracking-widest">Contact Us</h4>
+                <div class="text-gray-400 text-xs space-y-3">
+                    <p><i class="fas fa-phone-alt mr-2"></i> +91 90510 98057</p>
+                    <p><i class="fas fa-envelope mr-2"></i> royalaquafishes@gmail.com</p>
+                    <p><i class="fas fa-map-marker-alt mr-2"></i> Kolkata, West Bengal</p>
                 </div>
-                <p class="text-[10px] text-gray-500 mt-4 uppercase tracking-widest font-bold">Social ID: royalaquafishes</p>
             </div>
-            <div class="text-center md:text-left">
-                <h4 class="font-bold mb-4">Support</h4>
-                <p class="text-gray-400 text-sm">WhatsApp Care:<br><span class="text-white font-bold">90510 98057</span></p>
-                <p class="text-gray-400 text-xs mt-2 italic">Active 24/7 for queries</p>
+
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
+                <h4 class="font-bold text-white text-xs mb-3 uppercase">Visit YouTube</h4>
+                <a href="https://www.youtube.com/channel/UC3rGXGD66Aoef2sR1vu3-dQ" target="_blank" class="flex items-center gap-2 bg-red-600 p-2 rounded-lg justify-center hover:bg-red-700 transition">
+                    <i class="fab fa-youtube text-lg"></i>
+                    <span class="font-bold text-[10px]">SUBSCRIBE</span>
+                </a>
+                <p class="text-[9px] text-gray-500 mt-4 text-center">Instagram: @royalaquafishes</p>
             </div>
         </div>
-        <div class="text-center mt-12 pt-8 border-t border-gray-800 text-gray-500 text-xs px-4">
-            © 2024 Royal Aqua Fishies. Sabadhikari Shanto & Rick. All Rights Reserved.
+        <div class="mt-12 pt-8 border-t border-white/5 text-center text-[10px] text-gray-500 uppercase tracking-widest">
+            &copy; 2024 Royal Aqua Fishies | All Rights Reserved
         </div>
     </footer>
 
-    <script>
-        // Owner WhatsApp Number
-        const OWNER_WHATSAPP = "919051098057";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- Data Persistence ---
-        let products = JSON.parse(localStorage.getItem('aquafish_products')) || [];
-        let cart = JSON.parse(localStorage.getItem('aquafish_cart')) || [];
-        let orders = JSON.parse(localStorage.getItem('aquafish_orders')) || [];
-        let webSettings = JSON.parse(localStorage.getItem('aquafish_settings')) || {
-            logo: 'https://via.placeholder.com/150x50?text=LOGO',
-            banner: 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&w=1350&q=80'
-        };
+        // Config
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'royal-aqua-fishies-pro';
 
-        let tempProductImg = "";
+        const colPath = ['artifacts', appId, 'public', 'data'];
+        const prodCol = collection(db, ...colPath, 'products');
+        const orderCol = collection(db, ...colPath, 'orders');
+        const configDoc = doc(db, ...colPath, 'config', 'branding');
 
-        window.onload = () => {
-            initUI();
-            renderProducts();
-            updateCartUI();
-        };
+        let products = [];
+        let cart = JSON.parse(localStorage.getItem('ra_cart')) || [];
+        let userOrders = JSON.parse(localStorage.getItem('ra_orders')) || [];
+        let tempImg = "";
 
-        function initUI() {
-            document.getElementById('webLogo').src = webSettings.logo;
-            document.getElementById('heroBanner').style.backgroundImage = `linear-gradient(rgba(0,0,50,0.5), rgba(0,0,50,0.5)), url('${webSettings.banner}')`;
-        }
-
-        function showPage(pageId) {
-            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-            document.getElementById(`page-${pageId}`).classList.remove('hidden');
-            window.scrollTo(0,0);
-            if(pageId === 'cart') renderCart();
-            if(pageId === 'orders') renderUserOrders();
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('hidden');
-        }
-
-        function getBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        async function uploadWebImg(type) {
-            const inputId = type === 'logo' ? 'logoUpload' : 'bannerUpload';
-            const fileInput = document.getElementById(inputId);
-            if (fileInput.files && fileInput.files[0]) {
-                const b64 = await getBase64(fileInput.files[0]);
-                webSettings[type] = b64;
-                saveAndSync();
-                initUI();
-                alert(`${type.toUpperCase()} Updated!`);
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
             }
-        }
+        };
+        initAuth();
 
-        document.getElementById('pImgUpload').addEventListener('change', async function(e) {
-            if (e.target.files && e.target.files[0]) {
-                tempProductImg = await getBase64(e.target.files[0]);
-                const preview = document.getElementById('pImgPreview');
-                preview.classList.remove('hidden');
-                preview.querySelector('img').src = tempProductImg;
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                onSnapshot(prodCol, (snap) => {
+                    products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderProducts();
+                    renderInventory();
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                });
+                onSnapshot(configDoc, (snap) => {
+                    if (snap.exists()) {
+                        const d = snap.data();
+                        if (d.logo) document.getElementById('webLogo').src = d.logo;
+                        if (d.banner) document.getElementById('heroBanner').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${d.banner}')`;
+                    }
+                });
+                onSnapshot(orderCol, (snap) => {
+                    const ords = snap.docs.map(d => d.data());
+                    renderAdminOrders(ords);
+                });
             }
         });
+
+        window.showPage = (id) => {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${id}`).classList.remove('hidden');
+            window.scrollTo(0, 0);
+            if (id === 'cart') renderCart();
+            if (id === 'orders') renderUserHistory();
+        };
+
+        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('hidden');
+        window.openOwnerLogin = () => document.getElementById('loginModal').classList.remove('hidden');
+        window.closeLogin = () => document.getElementById('loginModal').classList.add('hidden');
+        window.closeOwnerPanel = () => document.getElementById('ownerPanel').classList.add('hidden');
+        
+        window.checkAdmin = () => {
+            if (document.getElementById('adminPass').value === '00/8/12BA') {
+                closeLogin();
+                document.getElementById('ownerPanel').classList.remove('hidden');
+            } else { alert("Wrong Pin!"); }
+        };
+
+        window.addToCart = (id) => {
+            const p = products.find(x => x.id === id);
+            if (p && p.stock !== false) {
+                cart.push({ ...p, cartId: Date.now() });
+                localStorage.setItem('ra_cart', JSON.stringify(cart));
+                updateCartBadge();
+                alert(`${p.name} added to cart!`);
+            }
+        };
+
+        function updateCartBadge() { document.getElementById('cartCount').innerText = cart.length; }
+        updateCartBadge();
 
         function renderProducts() {
             const list = document.getElementById('productList');
             if (products.length === 0) {
-                list.innerHTML = `<p class="col-span-full text-center py-10 text-gray-500">No products added yet.</p>`;
+                list.innerHTML = `<p class="col-span-full text-center py-20 text-gray-400">Updating collection...</p>`;
                 return;
             }
             list.innerHTML = products.map(p => `
-                <div class="bg-white rounded-xl shadow-md overflow-hidden relative flex flex-col h-full border border-gray-100">
-                    ${!p.available ? '<div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center text-white font-bold z-10 text-xl">Stock Out</div>' : ''}
-                    <img src="${p.image}" class="h-56 w-full object-cover">
-                    <div class="p-4 flex flex-col flex-grow">
-                        <h4 class="font-bold text-lg text-blue-900">${p.name}</h4>
-                        <p class="text-sm text-gray-500 mb-4 line-clamp-2">${p.desc}</p>
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col h-full overflow-hidden relative group">
+                    ${p.stock === false ? '<div class="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-black text-red-500 uppercase text-xs">Out of Stock</div>' : ''}
+                    <img src="${p.image}" class="h-40 md:h-48 w-full object-cover transition transform group-hover:scale-105">
+                    <div class="p-3 md:p-5 flex flex-col flex-grow">
+                        <h4 class="font-bold text-blue-900 text-sm md:text-base">${p.name}</h4>
+                        <p class="text-[9px] md:text-[10px] text-gray-400 line-clamp-2 mt-1 mb-3">${p.desc}</p>
                         <div class="mt-auto flex justify-between items-center">
-                            <span class="text-blue-900 font-black text-2xl">₹${p.price}</span>
-                            <button onclick="addToCart(${p.id})" ${!p.available ? 'disabled' : ''} class="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:bg-gray-300">
-                                <i class="fas fa-cart-plus mr-1"></i> Add
-                            </button>
+                            <span class="font-black text-base md:text-lg">₹${p.price}</span>
+                            <button onclick="window.addToCart('${p.id}')" ${p.stock === false ? 'disabled' : ''} class="w-7 h-7 md:w-9 md:h-9 bg-blue-900 text-white rounded-lg flex items-center justify-center hover:bg-black shadow-md"><i class="fas fa-plus text-[10px]"></i></button>
                         </div>
                     </div>
                 </div>
             `).join('');
-        }
-
-        function saveProduct(e) {
-            e.preventDefault();
-            const editId = document.getElementById('editProductId').value;
-            const pObj = {
-                id: editId ? parseInt(editId) : Date.now(),
-                name: document.getElementById('pName').value,
-                price: parseFloat(document.getElementById('pPrice').value),
-                desc: document.getElementById('pDesc').value,
-                image: tempProductImg || (editId ? products.find(i=>i.id == editId).image : ""),
-                available: document.getElementById('pAvailable').checked
-            };
-            if(editId) {
-                const idx = products.findIndex(p => p.id == editId);
-                products[idx] = pObj;
-            } else {
-                products.push(pObj);
-            }
-            saveAndSync();
-            renderProducts();
-            renderInventory();
-            resetForm();
-        }
-
-        function resetForm() {
-            document.getElementById('addProductForm').reset();
-            document.getElementById('editProductId').value = '';
-            document.getElementById('pImgPreview').classList.add('hidden');
-            tempProductImg = "";
-            document.getElementById('submitProductBtn').innerText = 'Save Product';
-        }
-
-        function renderInventory() {
-            const container = document.getElementById('adminInventory');
-            container.innerHTML = products.map(p => `
-                <div class="flex items-center justify-between bg-white p-3 rounded shadow-sm border">
-                    <div class="flex items-center gap-3">
-                        <img src="${p.image}" class="h-10 w-10 object-cover rounded">
-                        <div><p class="text-sm font-bold">${p.name}</p><p class="text-xs">₹${p.price}</p></div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="editProduct(${p.id})" class="text-blue-500"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteProduct(${p.id})" class="text-red-500"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function editProduct(id) {
-            const p = products.find(p => p.id === id);
-            document.getElementById('editProductId').value = p.id;
-            document.getElementById('pName').value = p.name;
-            document.getElementById('pPrice').value = p.price;
-            document.getElementById('pDesc').value = p.desc;
-            document.getElementById('pAvailable').checked = p.available;
-            tempProductImg = p.image;
-            document.getElementById('pImgPreview').classList.remove('hidden');
-            document.getElementById('pImgPreview').querySelector('img').src = p.image;
-            document.getElementById('submitProductBtn').innerText = 'Update Product';
-        }
-
-        function deleteProduct(id) {
-            if(confirm("Delete this product?")) {
-                products = products.filter(p => p.id !== id);
-                saveAndSync();
-                renderInventory();
-                renderProducts();
-            }
-        }
-
-        function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            if(p && p.available) {
-                cart.push({...p, cartId: Date.now()});
-                saveAndSync();
-                updateCartUI();
-                alert(`${p.name} added to cart!`);
-            }
-        }
-
-        function updateCartUI() {
-            document.getElementById('cartCount').innerText = cart.length;
         }
 
         function renderCart() {
-            const container = document.getElementById('cartItems');
-            const summary = document.getElementById('cartSummary');
-            if(cart.length === 0) {
-                container.innerHTML = '';
-                summary.classList.add('hidden');
-                document.getElementById('emptyCartMsg').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('emptyCartMsg').classList.add('hidden');
-            summary.classList.remove('hidden');
+            const c = document.getElementById('cartItems');
+            const s = document.getElementById('cartSummary');
+            const m = document.getElementById('emptyCartMsg');
+            if (cart.length === 0) { c.innerHTML = ''; s.classList.add('hidden'); m.classList.remove('hidden'); return; }
+            m.classList.add('hidden'); s.classList.remove('hidden');
             let total = 0;
-            container.innerHTML = cart.map((item, idx) => {
-                total += item.price;
+            c.innerHTML = cart.map((i, idx) => {
+                total += parseFloat(i.price);
                 return `
-                    <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm">
-                        <div class="flex items-center gap-4">
-                            <img src="${item.image}" class="h-16 w-16 object-cover rounded">
-                            <div><h4 class="font-bold">${item.name}</h4><p>₹${item.price}</p></div>
+                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <img src="${i.image}" class="w-12 h-12 object-cover rounded-lg">
+                            <div>
+                                <p class="text-xs font-bold text-blue-900">${i.name}</p>
+                                <p class="text-xs font-black">₹${i.price}</p>
+                            </div>
                         </div>
-                        <button onclick="removeFromCart(${idx})" class="text-red-500"><i class="fas fa-trash"></i></button>
+                        <button onclick="window.removeFromCart(${idx})" class="text-red-300 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 `;
             }).join('');
             document.getElementById('cartTotal').innerText = `₹${total}`;
         }
 
-        function removeFromCart(idx) {
-            cart.splice(idx, 1);
-            saveAndSync();
-            renderCart();
-            updateCartUI();
-        }
+        window.removeFromCart = (idx) => { cart.splice(idx, 1); localStorage.setItem('ra_cart', JSON.stringify(cart)); renderCart(); updateCartBadge(); };
 
-        function handleOrderSubmit(e) {
+        window.handleOrderSubmit = async (e) => {
             e.preventDefault();
-            const customerName = document.getElementById('fname').value + ' ' + document.getElementById('lname').value;
-            const customerPhone = document.getElementById('customerWhatsapp').value;
-            
-            const orderObj = {
-                orderId: 'RSA-' + Math.floor(1000 + Math.random() * 9000),
+            const fname = document.getElementById('fname').value;
+            const lname = document.getElementById('lname').value;
+            const city = document.getElementById('city').value;
+            const pin = document.getElementById('pincode').value;
+            const state = document.getElementById('state').value;
+            const addr = document.getElementById('address').value;
+            const phone = document.getElementById('customerWhatsapp').value;
+
+            const orderTotal = cart.reduce((s,i)=>s+parseFloat(i.price),0);
+            const itemsList = cart.map(i => i.name).join(', ');
+
+            const o = {
+                id: 'RA-' + Date.now().toString().slice(-6),
                 customer: {
-                    name: customerName,
-                    phone: customerPhone,
-                    address: document.getElementById('address').value,
-                    city: document.getElementById('city').value,
-                    state: document.getElementById('stateSelect').value,
-                    pincode: document.getElementById('pincode').value
+                    name: `${fname} ${lname}`,
+                    phone: phone,
+                    city: city,
+                    pincode: pin,
+                    state: state,
+                    addr: addr
                 },
-                items: [...cart],
-                total: cart.reduce((s, i) => s + i.price, 0),
+                items: cart.map(i => i.name),
+                total: orderTotal,
                 date: new Date().toLocaleString()
             };
 
-            orders.push(orderObj);
-            saveAndSync();
+            try {
+                // Save to Firestore
+                await addDoc(orderCol, o);
+                
+                // Add to local history
+                userOrders.push(o); 
+                localStorage.setItem('ra_orders', JSON.stringify(userOrders));
+                
+                // Format WhatsApp Message
+                let msg = `🔵 *NEW ORDER - ROYAL AQUA*\n`;
+                msg += `━━━━━━━━━━━━━━━━━━\n`;
+                msg += `🆔 *Order ID:* ${o.id}\n`;
+                msg += `📅 *Date:* ${o.date}\n\n`;
+                msg += `👤 *Customer Details:*\n`;
+                msg += `• *Name:* ${o.customer.name}\n`;
+                msg += `• *Phone:* ${o.customer.phone}\n`;
+                msg += `• *City/Vill:* ${o.customer.city}\n`;
+                msg += `• *State:* ${o.customer.state}\n`;
+                msg += `• *Pin Code:* ${o.customer.pincode}\n`;
+                msg += `• *Address:* ${o.customer.addr}\n\n`;
+                msg += `🛒 *Items Ordered:*\n`;
+                msg += `${cart.map(i => ` - ${i.name} (₹${i.price})`).join('\n')}\n\n`;
+                msg += `💰 *TOTAL AMOUNT: ₹${orderTotal}*\n`;
+                msg += `━━━━━━━━━━━━━━━━━━\n`;
+                msg += `_Please confirm my order. Thank you!_`;
 
-            // WhatsApp Message
-            let msg = `*NEW ORDER - ROYAL AQUA FISHIES*\n`;
-            msg += `---------------------------\n`;
-            msg += `*Order ID:* ${orderObj.orderId}\n`;
-            msg += `*Customer:* ${customerName}\n`;
-            msg += `*Contact:* ${customerPhone}\n`;
-            msg += `*Address:* ${orderObj.customer.address}, ${orderObj.customer.city}, ${orderObj.customer.state} - ${orderObj.customer.pincode}\n\n`;
-            msg += `*Items ordered:*\n`;
-            orderObj.items.forEach((it, i) => msg += `${i+1}. ${it.name} - ₹${it.price}\n`);
-            msg += `\n*TOTAL BILL: ₹${orderObj.total}*\n`;
-            msg += `---------------------------\n`;
-            msg += `_This message is sent from the website._`;
+                // Redirect to WhatsApp
+                const whatsappUrl = `https://wa.me/919051098057?text=${encodeURIComponent(msg)}`;
+                window.open(whatsappUrl, '_blank');
 
-            // Open WhatsApp to OWNER'S number
-            const waLink = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(msg)}`;
-            window.open(waLink, '_blank');
-            
-            cart = [];
-            saveAndSync();
-            updateCartUI();
-            alert("Order Confirmed! Your details have been sent to our WhatsApp support.");
-            showPage('home');
-        }
-
-        function renderUserOrders() {
-            const container = document.getElementById('userOrdersList');
-            if(orders.length === 0) {
-                container.innerHTML = `<p class="text-center py-10">No orders found.</p>`;
-                return;
+                // Clear Cart
+                cart = []; 
+                localStorage.removeItem('ra_cart'); 
+                updateCartBadge();
+                alert("Order submitted! Please send the message on WhatsApp to confirm.");
+                showPage('home');
+            } catch(err) { 
+                console.error(err);
+                alert("Failed to save order. Please try again."); 
             }
-            container.innerHTML = orders.slice().reverse().map(o => `
-                <div class="bg-white p-4 rounded-xl border-l-4 border-blue-900 shadow-sm">
-                    <div class="flex justify-between font-bold mb-2"><span>${o.orderId}</span><span>₹${o.total}</span></div>
-                    <p class="text-xs text-gray-500">${o.date}</p>
-                    <p class="text-xs mt-2">${o.items.length} items ordered.</p>
+        };
+
+        window.saveToFirebase = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            const editId = document.getElementById('editId').value;
+            btn.disabled = true; btn.innerText = "Processing...";
+            const data = {
+                name: document.getElementById('pName').value,
+                price: document.getElementById('pPrice').value,
+                desc: document.getElementById('pDesc').value,
+                stock: document.getElementById('pStock').checked,
+                image: tempImg || (editId ? products.find(p=>p.id==editId).image : "https://via.placeholder.com/300")
+            };
+            try {
+                if (editId) { await setDoc(doc(db, ...colPath, 'products', editId), data); }
+                else { await addDoc(prodCol, data); }
+                resetAdminForm(); alert("Product Saved Successfully!");
+            } catch (err) { alert("Database error!"); }
+            btn.disabled = false; btn.innerText = "Save Product";
+        };
+
+        window.uploadBranding = async (type) => {
+            const input = document.getElementById(type === 'logo' ? 'logoUpload' : 'bannerUpload');
+            if (input.files[0]) {
+                const reader = new FileReader();
+                reader.readAsDataURL(input.files[0]);
+                reader.onload = async () => {
+                    const up = {}; up[type] = reader.result;
+                    await setDoc(configDoc, up, { merge: true });
+                    alert("Update Successful!");
+                };
+            }
+        };
+
+        function renderInventory() {
+            document.getElementById('adminInv').innerHTML = products.map(p => `
+                <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-3"><img src="${p.image}" class="w-8 h-8 rounded-md object-cover"><p class="text-[10px] font-bold text-blue-900">${p.name}</p></div>
+                    <div class="flex gap-2">
+                        <button onclick="window.editProduct('${p.id}')" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="window.deleteProduct('${p.id}')" class="text-red-400 p-2"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>
             `).join('');
         }
 
-        function renderAdminOrders() {
-            const container = document.getElementById('adminOrdersTab');
-            container.innerHTML = orders.slice().reverse().map(o => `
-                <div class="bg-gray-100 p-3 rounded text-xs space-y-1">
-                    <p><b>ID:</b> ${o.orderId} | <b>Total:</b> ₹${o.total}</p>
-                    <p><b>Customer:</b> ${o.customer.name} (${o.customer.phone})</p>
-                    <p><b>Address:</b> ${o.customer.city}, ${o.customer.state}</p>
+        window.editProduct = (id) => {
+            const p = products.find(x => x.id === id);
+            document.getElementById('editId').value = p.id;
+            document.getElementById('pName').value = p.name;
+            document.getElementById('pPrice').value = p.price;
+            document.getElementById('pDesc').value = p.desc;
+            document.getElementById('pStock').checked = p.stock !== false;
+            tempImg = p.image;
+            document.getElementById('pPreview').classList.remove('hidden');
+            document.getElementById('pPreview').querySelector('img').src = p.image;
+            document.getElementById('saveBtn').innerText = "Update Product";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deleteProduct = async (id) => { if(confirm("Permanently delete this product?")) await deleteDoc(doc(db, ...colPath, 'products', id)); };
+
+        function renderAdminOrders(ords) {
+            document.getElementById('adminOrd').innerHTML = ords.slice().reverse().map(o => `
+                <div class="bg-gray-50 p-3 rounded-xl text-[10px] border border-gray-200">
+                    <div class="flex justify-between font-bold text-blue-900"><span>${o.id}</span><span>₹${o.total}</span></div>
+                    <p class="mt-1"><b>User:</b> ${o.customer.name} (${o.customer.phone})</p>
+                    <p><b>Loc:</b> ${o.customer.city}, ${o.customer.state} - ${o.customer.pincode}</p>
+                    <p class="mt-1 text-gray-500 italic truncate">${o.items.join(', ')}</p>
                 </div>
             `).join('');
         }
 
-        function openOwnerLogin() { document.getElementById('loginModal').classList.remove('hidden'); }
-        function closeLogin() { document.getElementById('loginModal').classList.add('hidden'); }
-        function verifyOwner() {
-            if(document.getElementById('ownerPass').value === '00/8/12BA') {
-                closeLogin();
-                document.getElementById('ownerPanel').classList.remove('hidden');
-                renderInventory();
-                renderAdminOrders();
-            } else { alert("Wrong Password!"); }
+        function renderUserHistory() {
+            const c = document.getElementById('userOrdersList');
+            if(userOrders.length === 0) { c.innerHTML = '<div class="text-center py-20 text-gray-400 font-medium italic"><p>No orders yet.</p></div>'; return; }
+            c.innerHTML = userOrders.slice().reverse().map(o => `
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-8 border-l-blue-900">
+                    <div class="flex justify-between font-bold text-base text-blue-900"><span>${o.id}</span><span>₹${o.total}</span></div>
+                    <p class="text-[11px] text-gray-400 mt-1">${o.date}</p>
+                    <div class="mt-3 text-[10px] text-gray-500">
+                        <p><i class="fas fa-box mr-1"></i> ${o.items.join(', ')}</p>
+                    </div>
+                </div>
+            `).join('');
         }
-        function closeOwnerPanel() { document.getElementById('ownerPanel').classList.add('hidden'); }
-        function toggleAdminTab(tab) {
-            const inv = document.getElementById('adminInventory');
-            const ord = document.getElementById('adminOrdersTab');
-            if(tab === 'inventory') {
+
+        window.resetAdminForm = () => {
+            document.getElementById('addProductForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('pPreview').classList.add('hidden');
+            tempImg = "";
+            document.getElementById('saveBtn').innerText = "Save Product";
+        };
+
+        window.toggleAdminTab = (t) => {
+            const inv = document.getElementById('adminInv'); const ord = document.getElementById('adminOrd');
+            const bi = document.getElementById('tabInv'); const bo = document.getElementById('tabOrd');
+            if(t === 'inv') {
                 inv.classList.remove('hidden'); ord.classList.add('hidden');
+                bi.className = "flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs";
+                bo.className = "flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs";
             } else {
-                inv.classList.add('hidden'); ord.classList.remove('hidden'); renderAdminOrders();
+                inv.classList.add('hidden'); ord.classList.remove('hidden');
+                bo.className = "flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs";
+                bi.className = "flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs";
             }
-        }
-        function saveAndSync() {
-            localStorage.setItem('aquafish_products', JSON.stringify(products));
-            localStorage.setItem('aquafish_cart', JSON.stringify(cart));
-            localStorage.setItem('aquafish_orders', JSON.stringify(orders));
-            localStorage.setItem('aquafish_settings', JSON.stringify(webSettings));
-        }
-        function scrollToProducts() { document.querySelector('#productList').scrollIntoView({ behavior: 'smooth' }); }
+        };
+
+        document.getElementById('pImgFile').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.readAsDataURL(e.target.files[0]);
+                reader.onload = () => {
+                    tempImg = reader.result;
+                    document.getElementById('pPreview').classList.remove('hidden');
+                    document.getElementById('pPreview').querySelector('img').src = tempImg;
+                };
+            }
+        });
+
+        window.scrollToProducts = () => document.getElementById('productList').scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 5000);
     </script>
 </body>
 </html>
