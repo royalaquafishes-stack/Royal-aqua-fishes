@@ -1,624 +1,787 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Royal Aqua Fishies - Colour Fish Selling</title>
+    <title>Royal Aqua Pro | Premium Ornamental Fish</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #001f3f;
+            --primary-dark: #001f3f;
             --accent-gold: #ffcc00;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background-color: #000b14;
+            color: #e2e8f0;
             overflow-x: hidden;
         }
-        .header-bg { background-color: var(--primary-blue); }
-        .btn-gold { background-color: var(--accent-gold); color: black; font-weight: bold; }
-        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 15px; }
-        .hidden { display: none; }
-        .owner-modal { background: rgba(0,0,0,0.8); }
-        .loader { 
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-blue);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .gold-gradient { background: linear-gradient(135deg, #ffcc00 0%, #ffb300 100%); }
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            transition: transform 0.3s ease;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .glass-card:hover { transform: translateY(-5px); }
+        .nav-link { position: relative; }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-gold);
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after { width: 100%; }
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--primary-dark);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+        }
+        .btn-gold {
+            background: var(--accent-gold);
+            color: var(--primary-dark);
+            font-weight: 700;
+            border-radius: 9999px;
+            padding: 12px 32px;
+            transition: all 0.3s;
+        }
+        .btn-gold:hover {
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+            transform: scale(1.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent-gold); border-radius: 10px; }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
-<body>
+<body class="custom-scrollbar">
 
-    <!-- Loading Screen -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center transition-opacity duration-500">
-        <div class="loader mb-4"></div>
-        <p class="text-blue-900 font-bold animate-pulse">Royal Aqua Loading...</p>
+    <!-- Pre-loader -->
+    <div id="preloader" class="loader">
+        <div class="relative w-24 h-24 mb-4">
+            <div class="absolute inset-0 border-4 border-gold-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-t-yellow-400 rounded-full animate-spin"></div>
+            <i class="fa-solid fa-fish-fins absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-yellow-400"></i>
+        </div>
+        <h2 class="font-serif text-2xl tracking-widest text-yellow-400">ROYAL AQUA</h2>
     </div>
 
-    <!-- Top Navbar -->
-    <header class="header-bg text-white sticky top-0 z-50 shadow-lg">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="text-2xl p-1"><i class="fas fa-bars"></i></button>
-                <img id="webLogo" src="https://via.placeholder.com/150x50?text=ROYAL+AQUA" alt="Logo" class="h-10 w-auto object-contain bg-white rounded p-1">
-                <h1 class="text-lg font-bold hidden sm:block">ROYAL AQUA</h1>
-            </div>
-            
-            <div class="flex gap-4 items-center">
-                <button onclick="showPage('home')" class="hover:text-yellow-400 font-medium text-sm">Home</button>
-                <button onclick="showPage('cart')" class="relative hover:text-yellow-400 p-2">
-                    <i class="fas fa-shopping-cart text-xl"></i>
-                    <span id="cartCount" class="absolute top-0 right-0 bg-red-500 text-[10px] rounded-full h-4 w-4 flex items-center justify-center">0</span>
-                </button>
-                <button onclick="openOwnerLogin()" class="bg-yellow-500 text-black px-3 py-1 rounded text-xs font-bold shadow-sm">Owner</button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Sidebar -->
-    <div id="sidebar" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden" onclick="toggleSidebar()">
-        <div class="bg-white text-black w-64 h-full p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center border-b pb-4">
-                <h2 class="text-xl font-bold text-blue-900 italic">Royal Menu</h2>
-                <button onclick="toggleSidebar()" class="text-2xl">&times;</button>
-            </div>
-            <nav class="space-y-2">
-                <button onclick="showPage('home'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-home text-blue-900"></i> Home</button>
-                <button onclick="showPage('orders'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-history text-blue-900"></i> My Orders</button>
-                <button onclick="showPage('cart'); toggleSidebar()" class="w-full text-left p-3 rounded-lg hover:bg-blue-50 font-semibold flex items-center gap-3"><i class="fas fa-shopping-bag text-blue-900"></i> My Cart</button>
-            </nav>
-        </div>
-    </div>
-
-    <!-- Home Content -->
-    <main id="page-home" class="page-content">
-        <section id="heroBanner" class="h-[300px] md:h-[450px] bg-cover bg-center flex items-center justify-center text-center text-white" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&w=1350&q=80');">
-            <div class="px-4">
-                <h2 class="text-3xl md:text-6xl font-black mb-4 tracking-tight uppercase">Royal Aqua Fishies</h2>
-                <p class="text-sm md:text-xl mb-8 opacity-90 font-light">Quality Fish, Better Aquarium, Best Price.</p>
-                <button onclick="scrollToProducts()" class="btn-gold px-8 py-3 rounded-full hover:scale-105 transition-all shadow-xl uppercase text-xs tracking-widest">Shop Now</button>
-            </div>
-        </section>
-
-        <section class="container mx-auto py-12 px-4">
-            <h3 class="text-2xl font-bold text-blue-900 mb-8 flex items-center gap-3">
-                <span class="w-2 h-8 bg-yellow-500 rounded-full"></span> Our Collection
-            </h3>
-            <div id="productList" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                <!-- Products -->
-            </div>
-        </section>
-    </main>
-
-    <!-- Cart Content -->
-    <main id="page-cart" class="page-content container mx-auto py-10 px-4 hidden">
-        <h2 class="text-2xl font-bold mb-6 text-blue-900">Your Cart</h2>
-        <div id="cartItems" class="space-y-4"></div>
-        <div id="cartSummary" class="mt-8 p-6 bg-white rounded-2xl shadow-xl hidden">
-            <div class="flex justify-between text-xl font-bold mb-6">
-                <span>Total Amount:</span>
-                <span id="cartTotal" class="text-blue-900">₹0</span>
-            </div>
-            <button onclick="showPage('checkout')" class="w-full bg-blue-900 text-white py-4 rounded-xl font-bold hover:bg-black transition text-lg">Checkout Order</button>
-        </div>
-        <div id="emptyCartMsg" class="text-center py-20 text-gray-400">
-            <i class="fas fa-shopping-cart text-5xl mb-4 opacity-20"></i>
-            <p>Your cart is empty.</p>
-        </div>
-    </main>
-
-    <!-- Checkout Content -->
-    <main id="page-checkout" class="page-content container mx-auto py-10 px-4 hidden">
-        <div class="max-w-xl mx-auto bg-white p-6 md:p-8 rounded-3xl shadow-2xl border border-gray-100">
-            <h2 class="text-2xl font-black mb-6 text-blue-900">Shipping Information</h2>
-            <form id="checkoutForm" class="space-y-4" onsubmit="handleOrderSubmit(event)">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" placeholder="First Name" required id="fname" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
-                    <input type="text" placeholder="Surname" required id="lname" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
+    <div id="app" class="min-h-screen flex flex-col hidden">
+        <!-- Header -->
+        <header class="fixed top-0 w-full z-50 bg-[#001f3f]/90 backdrop-blur-md border-b border-white/10 px-6 py-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img id="header-logo" src="https://cdn-icons-png.flaticon.com/512/2613/2613437.png" alt="Logo" class="h-10 w-10 object-contain rounded-full bg-white/10 p-1">
+                    <h1 class="font-serif text-xl md:text-2xl text-yellow-400 tracking-tight">Royal Aqua <span class="text-white">Pro</span></h1>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" placeholder="City/Village" required id="city" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
-                    <input type="number" placeholder="Pin Code" required id="pincode" class="border p-3 rounded-xl w-full outline-none focus:border-blue-900">
+                <nav class="hidden md:flex gap-8 font-medium">
+                    <button onclick="navigate('home')" class="nav-link">Home</button>
+                    <button onclick="navigate('shop')" class="nav-link">Shop</button>
+                    <button onclick="navigate('history')" class="nav-link">My Orders</button>
+                    <button onclick="openAdmin()" class="text-yellow-400 hover:opacity-80">Admin</button>
+                </nav>
+
+                <div class="flex items-center gap-5">
+                    <button onclick="navigate('cart')" class="relative p-2">
+                        <i class="fa-solid fa-cart-shopping text-2xl text-yellow-400"></i>
+                        <span id="cart-count" class="absolute -top-1 -right-1 bg-white text-[#001f3f] text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-2xl">
+                        <i class="fa-solid fa-bars-staggered"></i>
+                    </button>
                 </div>
+            </div>
+        </header>
 
-                <select id="state" required class="border p-3 rounded-xl w-full outline-none bg-white focus:border-blue-900">
-                    <option value="" disabled selected>Select State</option>
-                    <option value="West Bengal">West Bengal</option>
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                    <option value="Assam">Assam</option>
-                    <option value="Bihar">Bihar</option>
-                    <option value="Chhattisgarh">Chhattisgarh</option>
-                    <option value="Goa">Goa</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Haryana">Haryana</option>
-                    <option value="Himachal Pradesh">Himachal Pradesh</option>
-                    <option value="Jharkhand">Jharkhand</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Kerala">Kerala</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Manipur">Manipur</option>
-                    <option value="Meghalaya">Meghalaya</option>
-                    <option value="Mizoram">Mizoram</option>
-                    <option value="Nagaland">Nagaland</option>
-                    <option value="Odisha">Odisha</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Sikkim">Sikkim</option>
-                    <option value="Tamil Nadu">Tamil Nadu</option>
-                    <option value="Telangana">Telangana</option>
-                    <option value="Tripura">Tripura</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Uttarakhand">Uttarakhand</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <textarea placeholder="Full Address with Landmark" required id="address" class="border p-3 rounded-xl w-full h-24 outline-none focus:border-blue-900"></textarea>
-                
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <label class="text-[10px] font-bold text-blue-500 uppercase tracking-wider">WhatsApp Number</label>
-                    <input type="tel" placeholder="10 Digit Number" required id="customerWhatsapp" pattern="[0-9]{10}" class="bg-transparent border-b-2 border-blue-200 w-full py-2 outline-none focus:border-blue-900 transition-colors">
-                </div>
-
-                <button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-green-700 transition shadow-lg">
-                    <i class="fab fa-whatsapp text-2xl"></i> Send Order to WhatsApp
-                </button>
-                <button type="button" onclick="showPage('cart')" class="w-full text-gray-500 font-bold py-2 text-sm">Back to Cart</button>
-            </form>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="fixed inset-0 z-[60] bg-[#001f3f] hidden transform translate-x-full transition-transform duration-300 p-8">
+            <div class="flex justify-end mb-12">
+                <button onclick="toggleMobileMenu()" class="text-3xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex flex-col gap-8 text-2xl font-serif">
+                <button onclick="navigate('home'); toggleMobileMenu()" class="text-left">Home</button>
+                <button onclick="navigate('shop'); toggleMobileMenu()" class="text-left">Shop Collections</button>
+                <button onclick="navigate('history'); toggleMobileMenu()" class="text-left">Order History</button>
+                <button onclick="openAdmin(); toggleMobileMenu()" class="text-left text-yellow-400">Admin Login</button>
+            </div>
         </div>
-    </main>
 
-    <!-- Orders History -->
-    <main id="page-orders" class="page-content container mx-auto py-10 px-4 hidden">
-        <h2 class="text-2xl font-bold mb-6 text-blue-900">Your Orders</h2>
-        <div id="userOrdersList" class="space-y-4"></div>
-    </main>
-
-    <!-- Admin Panel -->
-    <div id="ownerPanel" class="fixed inset-0 z-[100] hidden owner-modal overflow-y-auto">
-        <div class="bg-white w-full max-w-5xl mx-auto my-5 p-6 rounded-3xl shadow-2xl relative">
-            <button onclick="closeOwnerPanel()" class="absolute top-4 right-6 text-3xl">&times;</button>
-            <h2 class="text-2xl font-black text-blue-900 mb-8 border-b pb-4 text-center italic uppercase">Royal Dashboard</h2>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="space-y-6">
-                    <div class="bg-gray-50 p-5 rounded-2xl border">
-                        <h3 class="font-bold mb-4 flex items-center gap-2 text-sm uppercase text-gray-500"><i class="fas fa-palette"></i> Branding Update</h3>
-                        <div class="space-y-4">
-                            <label class="block text-[10px] font-bold text-gray-400">SELECT LOGO</label>
-                            <input type="file" id="logoUpload" accept="image/*" class="text-xs w-full">
-                            <button onclick="uploadBranding('logo')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Save Logo</button>
-                            
-                            <label class="block text-[10px] font-bold text-gray-400 mt-4">SELECT HERO BANNER</label>
-                            <input type="file" id="bannerUpload" accept="image/*" class="text-xs w-full">
-                            <button onclick="uploadBranding('banner')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Save Banner</button>
+        <!-- Main Content Area -->
+        <main id="main-content" class="flex-grow pt-24 pb-12 px-4">
+            <!-- Home Page -->
+            <section id="page-home" class="max-w-7xl mx-auto">
+                <div class="relative rounded-[40px] overflow-hidden h-[70vh] flex items-center px-8 md:px-16 mb-20 bg-gradient-to-r from-black/80 to-transparent">
+                    <img src="https://images.unsplash.com/photo-1524704654690-b56c05c78a00?auto=format&fit=crop&q=80&w=2000" class="absolute inset-0 w-full h-full object-cover -z-10" alt="Hero">
+                    <div class="max-w-2xl">
+                        <span class="inline-block px-4 py-1 bg-yellow-400 text-[#001f3f] font-bold rounded-full text-xs mb-6 tracking-widest uppercase">Premium Ornamental Selection</span>
+                        <h2 class="text-5xl md:text-7xl font-serif mb-6 leading-tight">Elevate Your <br><span class="text-yellow-400">Aquatic Paradise</span></h2>
+                        <p class="text-lg text-slate-300 mb-10 leading-relaxed max-w-lg">Discover exotic Betta, Goldfish, and rare aquatic species curated for the most discerning collectors. Direct quality from Kolkata's premium breeders.</p>
+                        <div class="flex flex-wrap gap-4">
+                            <button onclick="navigate('shop')" class="btn-gold">Shop Collection</button>
+                            <button onclick="window.open('https://wa.me/919051098057')" class="px-8 py-3 rounded-full border border-white/20 hover:bg-white/10 transition">Contact Expert</button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
-                        <h3 class="font-bold mb-4 text-sm uppercase text-blue-900">Product Management</h3>
-                        <form id="addProductForm" onsubmit="saveToFirebase(event)" class="space-y-3">
-                            <input type="hidden" id="editId">
-                            <input type="text" id="pName" placeholder="Fish Name" required class="w-full p-3 rounded-xl border text-sm">
-                            <input type="number" id="pPrice" placeholder="Price (₹)" required class="w-full p-3 rounded-xl border text-sm">
-                            <textarea id="pDesc" placeholder="Description" required class="w-full p-3 rounded-xl border h-20 text-sm"></textarea>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase">Product Image</label>
-                            <input type="file" id="pImgFile" accept="image/*" class="text-xs w-full">
-                            <div id="pPreview" class="hidden mt-2"><img src="" class="h-20 rounded shadow"></div>
-                            <div class="flex items-center gap-2 py-2">
-                                <label class="text-xs font-bold">In Stock?</label>
-                                <input type="checkbox" id="pStock" checked class="w-5 h-5 accent-blue-900">
+                <div class="mb-16">
+                    <div class="flex justify-between items-end mb-10">
+                        <div>
+                            <h3 class="text-3xl font-serif mb-2">Featured Specimens</h3>
+                            <p class="text-slate-400">Hand-picked additions for your aquarium</p>
+                        </div>
+                        <button onclick="navigate('shop')" class="text-yellow-400 border-b border-yellow-400 pb-1 hover:opacity-75 transition">View All Products</button>
+                    </div>
+                    <div id="featured-products" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <!-- Products will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Shop Page -->
+            <section id="page-shop" class="max-w-7xl mx-auto hidden">
+                <h2 class="text-4xl font-serif mb-12 text-center">Our Catalog</h2>
+                <div id="shop-products" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    <!-- Products will be injected here -->
+                </div>
+            </section>
+
+            <!-- Cart Page -->
+            <section id="page-cart" class="max-w-4xl mx-auto hidden">
+                <h2 class="text-3xl font-serif mb-10 flex items-center gap-4">
+                    <i class="fa-solid fa-basket-shopping text-yellow-400"></i> Your Shopping Bag
+                </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <div class="lg:col-span-2 space-y-4" id="cart-items">
+                        <!-- Cart items -->
+                    </div>
+                    <div class="space-y-6">
+                        <div class="glass-card p-6 border-yellow-400/30">
+                            <h3 class="text-xl font-serif mb-6">Order Summary</h3>
+                            <div class="space-y-4 mb-6">
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Subtotal</span>
+                                    <span id="summary-subtotal">₹0</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>Delivery Type</span>
+                                    <select id="delivery-type" onchange="updateCartTotal()" class="bg-white/10 border-none rounded-lg text-sm px-2 py-1 focus:ring-1 focus:ring-yellow-400">
+                                        <option value="pickup" class="bg-[#001f3f]">Self-Pickup (₹0)</option>
+                                        <option value="courier" class="bg-[#001f3f]">Courier (₹30)</option>
+                                    </select>
+                                </div>
+                                <hr class="border-white/10">
+                                <div class="flex justify-between text-xl font-bold">
+                                    <span>Total</span>
+                                    <span id="summary-total" class="text-yellow-400">₹0</span>
+                                </div>
                             </div>
-                            <button type="submit" id="saveBtn" class="w-full bg-blue-900 text-white py-3 rounded-xl font-bold shadow-lg uppercase tracking-wider">Save Product</button>
-                            <button type="button" onclick="resetAdminForm()" class="w-full text-xs text-gray-400 font-bold py-2">Reset Form</button>
+                            <button onclick="showCheckoutModal()" class="w-full btn-gold">Checkout Now</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Page -->
+            <section id="page-history" class="max-w-4xl mx-auto hidden">
+                <h2 class="text-3xl font-serif mb-10">My Recent Orders</h2>
+                <div id="orders-list" class="space-y-4">
+                    <p class="text-slate-500 italic">No orders found. Start shopping to see history.</p>
+                </div>
+            </section>
+
+            <!-- Admin Panel -->
+            <section id="page-admin" class="max-w-7xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-serif">Admin Dashboard</h2>
+                    <button onclick="navigate('home')" class="text-red-400">Exit Panel</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <!-- Inventory Management -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-green-400">
+                            <i class="fa-solid fa-plus-circle"></i> Add New Specimen
+                        </h3>
+                        <form id="add-product-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Fish Name</label>
+                                <input type="text" id="p-name" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-yellow-400 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Price (₹)</label>
+                                <input type="number" id="p-price" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-yellow-400 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Description / Short Details</label>
+                                <textarea id="p-desc" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 focus:border-yellow-400 outline-none h-24" placeholder="e.g. Rare Blue Rim Halfmoon, Healthy & Active"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-400 mb-1">Upload Specimen Image</label>
+                                <input type="file" id="p-image" accept="image/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-yellow-400 file:text-[#001f3f] hover:file:bg-yellow-500">
+                            </div>
+                            <button type="submit" class="w-full btn-gold">Publish Specimen</button>
                         </form>
                     </div>
-                </div>
 
-                <div>
-                    <div class="flex gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
-                        <button onclick="toggleAdminTab('inv')" id="tabInv" class="flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs">Inventory</button>
-                        <button onclick="toggleAdminTab('ord')" id="tabOrd" class="flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs">Orders</button>
-                    </div>
-                    <div id="adminInv" class="space-y-3 max-h-[600px] overflow-y-auto"></div>
-                    <div id="adminOrd" class="hidden space-y-3 max-h-[600px] overflow-y-auto"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Login Modal -->
-    <div id="loginModal" class="fixed inset-0 z-[110] owner-modal flex items-center justify-center hidden">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-80 text-center">
-            <h2 class="text-xl font-bold mb-6 text-blue-900 uppercase tracking-widest">Admin Login</h2>
-            <input type="password" id="adminPass" placeholder="Enter PIN" class="border-2 p-3 w-full mb-6 rounded-xl text-center focus:border-blue-900 outline-none text-xl tracking-widest">
-            <div class="flex flex-col gap-2">
-                <button onclick="checkAdmin()" class="bg-blue-900 text-white py-3 rounded-xl font-bold">Login</button>
-                <button onclick="closeLogin()" class="text-gray-400 py-2">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="header-bg text-white py-12 mt-20">
-        <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
-            <div class="space-y-4">
-                <h3 class="text-2xl font-black italic tracking-tighter uppercase">Royal Aqua</h3>
-                <p class="text-gray-400 text-xs leading-relaxed">Providing high-quality ornamental fishes and accessories. Your satisfaction is our pride.</p>
-                <div class="flex justify-center md:justify-start gap-4">
-                    <a href="https://wa.me/919051098057" target="_blank" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-whatsapp"></i></a>
-                    <a href="https://www.facebook.com/share/1CfKwiQeMd/" target="_blank" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-facebook-f"></i></a>
-                    <a href="https://www.instagram.com/royalaquafishes" target="_blank" class="w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-instagram"></i></a>
-                    <a href="https://www.youtube.com/channel/UC3rGXGD66Aoef2sR1vu3-dQ" target="_blank" class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center hover:scale-110 transition"><i class="fab fa-youtube"></i></a>
-                </div>
-            </div>
-            
-            <div>
-                <h4 class="font-bold text-yellow-400 text-sm mb-4 uppercase tracking-widest">Shop Info</h4>
-                <ul class="text-gray-400 text-xs space-y-3">
-                    <li><button onclick="showPage('home')">Browse Products</button></li>
-                    <li><button onclick="showPage('cart')">Shopping Cart</button></li>
-                    <li><button onclick="showPage('orders')">Track Order</button></li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="font-bold text-yellow-400 text-sm mb-4 uppercase tracking-widest">Contact Us</h4>
-                <div class="text-gray-400 text-xs space-y-3">
-                    <p><i class="fas fa-phone-alt mr-2"></i> +91 90510 98057</p>
-                    <p><i class="fas fa-envelope mr-2"></i> royalaquafishes@gmail.com</p>
-                    <p><i class="fas fa-map-marker-alt mr-2"></i> Kolkata, West Bengal</p>
-                </div>
-            </div>
-
-            <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                <h4 class="font-bold text-white text-xs mb-3 uppercase">Visit YouTube</h4>
-                <a href="https://www.youtube.com/channel/UC3rGXGD66Aoef2sR1vu3-dQ" target="_blank" class="flex items-center gap-2 bg-red-600 p-2 rounded-lg justify-center hover:bg-red-700 transition">
-                    <i class="fab fa-youtube text-lg"></i>
-                    <span class="font-bold text-[10px]">SUBSCRIBE</span>
-                </a>
-                <p class="text-[9px] text-gray-500 mt-4 text-center">Instagram: @royalaquafishes</p>
-            </div>
-        </div>
-        <div class="mt-12 pt-8 border-t border-white/5 text-center text-[10px] text-gray-500 uppercase tracking-widest">
-            &copy; 2024 Royal Aqua Fishies | All Rights Reserved
-        </div>
-    </footer>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Config
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'royal-aqua-fishies-pro';
-
-        const colPath = ['artifacts', appId, 'public', 'data'];
-        const prodCol = collection(db, ...colPath, 'products');
-        const orderCol = collection(db, ...colPath, 'orders');
-        const configDoc = doc(db, ...colPath, 'config', 'branding');
-
-        let products = [];
-        let cart = JSON.parse(localStorage.getItem('ra_cart')) || [];
-        let userOrders = JSON.parse(localStorage.getItem('ra_orders')) || [];
-        let tempImg = "";
-
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                onSnapshot(prodCol, (snap) => {
-                    products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    renderProducts();
-                    renderInventory();
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                });
-                onSnapshot(configDoc, (snap) => {
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        if (d.logo) document.getElementById('webLogo').src = d.logo;
-                        if (d.banner) document.getElementById('heroBanner').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('${d.banner}')`;
-                    }
-                });
-                onSnapshot(orderCol, (snap) => {
-                    const ords = snap.docs.map(d => d.data());
-                    renderAdminOrders(ords);
-                });
-            }
-        });
-
-        window.showPage = (id) => {
-            document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-            document.getElementById(`page-${id}`).classList.remove('hidden');
-            window.scrollTo(0, 0);
-            if (id === 'cart') renderCart();
-            if (id === 'orders') renderUserHistory();
-        };
-
-        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('hidden');
-        window.openOwnerLogin = () => document.getElementById('loginModal').classList.remove('hidden');
-        window.closeLogin = () => document.getElementById('loginModal').classList.add('hidden');
-        window.closeOwnerPanel = () => document.getElementById('ownerPanel').classList.add('hidden');
-        
-        window.checkAdmin = () => {
-            if (document.getElementById('adminPass').value === '00/8/12BA') {
-                closeLogin();
-                document.getElementById('ownerPanel').classList.remove('hidden');
-            } else { alert("Wrong Pin!"); }
-        };
-
-        window.addToCart = (id) => {
-            const p = products.find(x => x.id === id);
-            if (p && p.stock !== false) {
-                cart.push({ ...p, cartId: Date.now() });
-                localStorage.setItem('ra_cart', JSON.stringify(cart));
-                updateCartBadge();
-                alert(`${p.name} added to cart!`);
-            }
-        };
-
-        function updateCartBadge() { document.getElementById('cartCount').innerText = cart.length; }
-        updateCartBadge();
-
-        function renderProducts() {
-            const list = document.getElementById('productList');
-            if (products.length === 0) {
-                list.innerHTML = `<p class="col-span-full text-center py-20 text-gray-400">Updating collection...</p>`;
-                return;
-            }
-            list.innerHTML = products.map(p => `
-                <div class="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col h-full overflow-hidden relative group">
-                    ${p.stock === false ? '<div class="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-black text-red-500 uppercase text-xs">Out of Stock</div>' : ''}
-                    <img src="${p.image}" class="h-40 md:h-48 w-full object-cover transition transform group-hover:scale-105">
-                    <div class="p-3 md:p-5 flex flex-col flex-grow">
-                        <h4 class="font-bold text-blue-900 text-sm md:text-base">${p.name}</h4>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 line-clamp-2 mt-1 mb-3">${p.desc}</p>
-                        <div class="mt-auto flex justify-between items-center">
-                            <span class="font-black text-base md:text-lg">₹${p.price}</span>
-                            <button onclick="window.addToCart('${p.id}')" ${p.stock === false ? 'disabled' : ''} class="w-7 h-7 md:w-9 md:h-9 bg-blue-900 text-white rounded-lg flex items-center justify-center hover:bg-black shadow-md"><i class="fas fa-plus text-[10px]"></i></button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderCart() {
-            const c = document.getElementById('cartItems');
-            const s = document.getElementById('cartSummary');
-            const m = document.getElementById('emptyCartMsg');
-            if (cart.length === 0) { c.innerHTML = ''; s.classList.add('hidden'); m.classList.remove('hidden'); return; }
-            m.classList.add('hidden'); s.classList.remove('hidden');
-            let total = 0;
-            c.innerHTML = cart.map((i, idx) => {
-                total += parseFloat(i.price);
-                return `
-                    <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-                        <div class="flex items-center gap-3">
-                            <img src="${i.image}" class="w-12 h-12 object-cover rounded-lg">
-                            <div>
-                                <p class="text-xs font-bold text-blue-900">${i.name}</p>
-                                <p class="text-xs font-black">₹${i.price}</p>
+                    <!-- App Settings -->
+                    <div class="glass-card p-8">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-yellow-400">
+                            <i class="fa-solid fa-gears"></i> Store Identity
+                        </h3>
+                        <div class="space-y-6">
+                            <div class="p-4 border border-white/10 rounded-2xl flex items-center gap-6">
+                                <img id="current-logo-preview" src="https://cdn-icons-png.flaticon.com/512/2613/2613437.png" class="w-20 h-20 rounded-xl object-contain bg-white/5">
+                                <div>
+                                    <h4 class="font-bold mb-2">Store Logo</h4>
+                                    <input type="file" id="logo-uploader" onchange="uploadLogo(event)" class="text-xs">
+                                    <p class="text-[10px] text-slate-500 mt-2 italic">Updates favicon and header across all devices</p>
+                                </div>
                             </div>
                         </div>
-                        <button onclick="window.removeFromCart(${idx})" class="text-red-300 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-            }).join('');
-            document.getElementById('cartTotal').innerText = `₹${total}`;
-        }
-
-        window.removeFromCart = (idx) => { cart.splice(idx, 1); localStorage.setItem('ra_cart', JSON.stringify(cart)); renderCart(); updateCartBadge(); };
-
-        window.handleOrderSubmit = async (e) => {
-            e.preventDefault();
-            const fname = document.getElementById('fname').value;
-            const lname = document.getElementById('lname').value;
-            const city = document.getElementById('city').value;
-            const pin = document.getElementById('pincode').value;
-            const state = document.getElementById('state').value;
-            const addr = document.getElementById('address').value;
-            const phone = document.getElementById('customerWhatsapp').value;
-
-            const orderTotal = cart.reduce((s,i)=>s+parseFloat(i.price),0);
-            const itemsList = cart.map(i => i.name).join(', ');
-
-            const o = {
-                id: 'RA-' + Date.now().toString().slice(-6),
-                customer: {
-                    name: `${fname} ${lname}`,
-                    phone: phone,
-                    city: city,
-                    pincode: pin,
-                    state: state,
-                    addr: addr
-                },
-                items: cart.map(i => i.name),
-                total: orderTotal,
-                date: new Date().toLocaleString()
-            };
-
-            try {
-                // Save to Firestore
-                await addDoc(orderCol, o);
-                
-                // Add to local history
-                userOrders.push(o); 
-                localStorage.setItem('ra_orders', JSON.stringify(userOrders));
-                
-                // Format WhatsApp Message
-                let msg = `🔵 *NEW ORDER - ROYAL AQUA*\n`;
-                msg += `━━━━━━━━━━━━━━━━━━\n`;
-                msg += `🆔 *Order ID:* ${o.id}\n`;
-                msg += `📅 *Date:* ${o.date}\n\n`;
-                msg += `👤 *Customer Details:*\n`;
-                msg += `• *Name:* ${o.customer.name}\n`;
-                msg += `• *Phone:* ${o.customer.phone}\n`;
-                msg += `• *City/Vill:* ${o.customer.city}\n`;
-                msg += `• *State:* ${o.customer.state}\n`;
-                msg += `• *Pin Code:* ${o.customer.pincode}\n`;
-                msg += `• *Address:* ${o.customer.addr}\n\n`;
-                msg += `🛒 *Items Ordered:*\n`;
-                msg += `${cart.map(i => ` - ${i.name} (₹${i.price})`).join('\n')}\n\n`;
-                msg += `💰 *TOTAL AMOUNT: ₹${orderTotal}*\n`;
-                msg += `━━━━━━━━━━━━━━━━━━\n`;
-                msg += `_Please confirm my order. Thank you!_`;
-
-                // Redirect to WhatsApp
-                const whatsappUrl = `https://wa.me/919051098057?text=${encodeURIComponent(msg)}`;
-                window.open(whatsappUrl, '_blank');
-
-                // Clear Cart
-                cart = []; 
-                localStorage.removeItem('ra_cart'); 
-                updateCartBadge();
-                alert("Order submitted! Please send the message on WhatsApp to confirm.");
-                showPage('home');
-            } catch(err) { 
-                console.error(err);
-                alert("Failed to save order. Please try again."); 
-            }
-        };
-
-        window.saveToFirebase = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('saveBtn');
-            const editId = document.getElementById('editId').value;
-            btn.disabled = true; btn.innerText = "Processing...";
-            const data = {
-                name: document.getElementById('pName').value,
-                price: document.getElementById('pPrice').value,
-                desc: document.getElementById('pDesc').value,
-                stock: document.getElementById('pStock').checked,
-                image: tempImg || (editId ? products.find(p=>p.id==editId).image : "https://via.placeholder.com/300")
-            };
-            try {
-                if (editId) { await setDoc(doc(db, ...colPath, 'products', editId), data); }
-                else { await addDoc(prodCol, data); }
-                resetAdminForm(); alert("Product Saved Successfully!");
-            } catch (err) { alert("Database error!"); }
-            btn.disabled = false; btn.innerText = "Save Product";
-        };
-
-        window.uploadBranding = async (type) => {
-            const input = document.getElementById(type === 'logo' ? 'logoUpload' : 'bannerUpload');
-            if (input.files[0]) {
-                const reader = new FileReader();
-                reader.readAsDataURL(input.files[0]);
-                reader.onload = async () => {
-                    const up = {}; up[type] = reader.result;
-                    await setDoc(configDoc, up, { merge: true });
-                    alert("Update Successful!");
-                };
-            }
-        };
-
-        function renderInventory() {
-            document.getElementById('adminInv').innerHTML = products.map(p => `
-                <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                    <div class="flex items-center gap-3"><img src="${p.image}" class="w-8 h-8 rounded-md object-cover"><p class="text-[10px] font-bold text-blue-900">${p.name}</p></div>
-                    <div class="flex gap-2">
-                        <button onclick="window.editProduct('${p.id}')" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.deleteProduct('${p.id}')" class="text-red-400 p-2"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-            `).join('');
-        }
 
-        window.editProduct = (id) => {
-            const p = products.find(x => x.id === id);
-            document.getElementById('editId').value = p.id;
-            document.getElementById('pName').value = p.name;
-            document.getElementById('pPrice').value = p.price;
-            document.getElementById('pDesc').value = p.desc;
-            document.getElementById('pStock').checked = p.stock !== false;
-            tempImg = p.image;
-            document.getElementById('pPreview').classList.remove('hidden');
-            document.getElementById('pPreview').querySelector('img').src = p.image;
-            document.getElementById('saveBtn').innerText = "Update Product";
+                <!-- NEW: Inventory Management -->
+                <div class="mt-12 glass-card p-8">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-blue-400">
+                        <i class="fa-solid fa-warehouse"></i> Inventory Manager
+                    </h3>
+                    <div id="admin-inventory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Product inventory cards -->
+                    </div>
+                </div>
+
+                <!-- Admin Orders View -->
+                <div class="mt-12 glass-card p-8">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2 text-yellow-400">
+                        <i class="fa-solid fa-truck-fast"></i> Real-time Order Manager
+                    </h3>
+                    <div id="admin-orders-list" class="space-y-4">
+                        <!-- Admin order cards -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-[#001122] border-t border-white/5 pt-16 pb-8 px-6">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                <div class="col-span-1 md:col-span-1">
+                    <h3 class="font-serif text-2xl text-yellow-400 mb-6">Royal Aqua Pro</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">Curating the finest aquatic specimens since 2018. Kolkata's leading source for premium ornamental fish.</p>
+                    <div class="flex gap-4">
+                        <a href="https://www.facebook.com/share/1CfKwiQeMd/" target="_blank" rel="noopener noreferrer" class="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-blue-600 transition"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/royalaquafishes" target="_blank" rel="noopener noreferrer" class="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gradient-to-tr from-yellow-500 to-purple-600 transition"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.youtube.com/@royalaquafishes" target="_blank" rel="noopener noreferrer" class="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-600 transition"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 uppercase text-xs tracking-widest text-slate-500">Contact Us</h4>
+                    <ul class="space-y-4 text-sm">
+                        <li class="flex items-center gap-3"><i class="fa-solid fa-phone text-yellow-400"></i> +91 90510 98057</li>
+                        <li class="flex items-center gap-3"><i class="fa-solid fa-envelope text-yellow-400"></i> royalaquafishes@gmail.com</li>
+                        <li class="flex items-center gap-3"><i class="fa-solid fa-clock text-yellow-400"></i> 10 AM - 8 PM (Daily)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 uppercase text-xs tracking-widest text-slate-500">Service Area</h4>
+                    <p class="text-sm text-slate-400">Shipping across India (Courier) & Local Pickup available from our Kolkata hatchery.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-6 uppercase text-xs tracking-widest text-slate-500">Direct Support</h4>
+                    <div class="space-y-3">
+                        <a href="https://wa.me/919051098057" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-green-600 py-3 rounded-xl font-bold text-sm hover:bg-green-700 transition"><i class="fa-brands fa-whatsapp mr-2"></i> WhatsApp Support</a>
+                        <a href="tel:+919051098057" class="block w-full text-center bg-white/5 py-3 rounded-xl font-bold text-sm hover:bg-white/10 transition border border-white/10">Call Sales Team</a>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center border-t border-white/5 pt-8">
+                <p class="text-xs text-slate-500">&copy; 2024 Royal Aqua Pro. All specimens handled with extreme care.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="checkout-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-[#001f3f] w-full max-w-lg rounded-[30px] p-8 border border-yellow-400/30">
+            <h3 class="text-2xl font-serif mb-6 text-yellow-400">Delivery Details</h3>
+            <form id="checkout-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="Full Name" id="c-name" required class="bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                    <input type="tel" placeholder="Phone Number" id="c-phone" required class="bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="City/Village" id="c-city" required class="bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                    <input type="text" placeholder="State" id="c-state" required class="bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                </div>
+                <input type="text" placeholder="Pin Code" id="c-pin" required class="bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                <textarea placeholder="Full Shipping Address" id="c-address" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400 h-24"></textarea>
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="closeModal('checkout-modal')" class="flex-1 py-3 border border-white/10 rounded-xl hover:bg-white/5">Cancel</button>
+                    <button type="submit" class="flex-1 btn-gold">Confirm Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="edit-product-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-[#001f3f] w-full max-w-lg rounded-[30px] p-8 border border-yellow-400/30">
+            <h3 class="text-2xl font-serif mb-6 text-yellow-400">Edit Specimen</h3>
+            <form id="edit-product-form" class="space-y-4">
+                <input type="hidden" id="edit-p-id">
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Fish Name</label>
+                    <input type="text" id="edit-p-name" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Price (₹)</label>
+                    <input type="number" id="edit-p-price" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400 mb-1">Description</label>
+                    <textarea id="edit-p-desc" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-yellow-400 h-24"></textarea>
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="closeModal('edit-product-modal')" class="flex-1 py-3 border border-white/10 rounded-xl hover:bg-white/5">Cancel</button>
+                    <button type="submit" class="flex-1 btn-gold">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="admin-pass-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+        <div class="bg-[#001f3f] w-full max-w-sm rounded-[30px] p-8 border border-white/10 text-center">
+            <i class="fa-solid fa-lock text-4xl text-yellow-400 mb-4"></i>
+            <h3 class="text-xl font-serif mb-6">Restricted Access</h3>
+            <input type="password" id="admin-password" placeholder="Enter Access Code" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none text-center mb-6 focus:border-yellow-400">
+            <div class="flex gap-4">
+                <button onclick="closeModal('admin-pass-modal')" class="flex-1 py-3 text-slate-400 hover:text-white">Cancel</button>
+                <button onclick="verifyAdmin()" class="flex-1 btn-gold">Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, addDoc, getDoc, onSnapshot, query, updateDoc, deleteDoc, Timestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'royal-aqua-pro-v1';
+
+        // --- GLOBAL STATE ---
+        let user = null;
+        let products = [];
+        let cart = [];
+        let orders = [];
+        let siteSettings = { logo: '' };
+
+        // --- UI UTILITIES ---
+        const $ = (id) => document.getElementById(id);
+        const show = (id) => $(id).classList.remove('hidden');
+        const hide = (id) => $(id).classList.add('hidden');
+
+        window.navigate = (pageId) => {
+            ['home', 'shop', 'cart', 'history', 'admin'].forEach(p => hide(`page-${p}`));
+            show(`page-${pageId}`);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.deleteProduct = async (id) => { if(confirm("Permanently delete this product?")) await deleteDoc(doc(db, ...colPath, 'products', id)); };
-
-        function renderAdminOrders(ords) {
-            document.getElementById('adminOrd').innerHTML = ords.slice().reverse().map(o => `
-                <div class="bg-gray-50 p-3 rounded-xl text-[10px] border border-gray-200">
-                    <div class="flex justify-between font-bold text-blue-900"><span>${o.id}</span><span>₹${o.total}</span></div>
-                    <p class="mt-1"><b>User:</b> ${o.customer.name} (${o.customer.phone})</p>
-                    <p><b>Loc:</b> ${o.customer.city}, ${o.customer.state} - ${o.customer.pincode}</p>
-                    <p class="mt-1 text-gray-500 italic truncate">${o.items.join(', ')}</p>
-                </div>
-            `).join('');
-        }
-
-        function renderUserHistory() {
-            const c = document.getElementById('userOrdersList');
-            if(userOrders.length === 0) { c.innerHTML = '<div class="text-center py-20 text-gray-400 font-medium italic"><p>No orders yet.</p></div>'; return; }
-            c.innerHTML = userOrders.slice().reverse().map(o => `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 border-l-8 border-l-blue-900">
-                    <div class="flex justify-between font-bold text-base text-blue-900"><span>${o.id}</span><span>₹${o.total}</span></div>
-                    <p class="text-[11px] text-gray-400 mt-1">${o.date}</p>
-                    <div class="mt-3 text-[10px] text-gray-500">
-                        <p><i class="fas fa-box mr-1"></i> ${o.items.join(', ')}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.resetAdminForm = () => {
-            document.getElementById('addProductForm').reset();
-            document.getElementById('editId').value = '';
-            document.getElementById('pPreview').classList.add('hidden');
-            tempImg = "";
-            document.getElementById('saveBtn').innerText = "Save Product";
-        };
-
-        window.toggleAdminTab = (t) => {
-            const inv = document.getElementById('adminInv'); const ord = document.getElementById('adminOrd');
-            const bi = document.getElementById('tabInv'); const bo = document.getElementById('tabOrd');
-            if(t === 'inv') {
-                inv.classList.remove('hidden'); ord.classList.add('hidden');
-                bi.className = "flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs";
-                bo.className = "flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs";
+        window.toggleMobileMenu = () => {
+            const menu = $('mobile-menu');
+            if(menu.classList.contains('hidden')) {
+                show('mobile-menu');
+                setTimeout(() => menu.classList.remove('translate-x-full'), 10);
             } else {
-                inv.classList.add('hidden'); ord.classList.remove('hidden');
-                bo.className = "flex-1 py-2 rounded-lg font-bold bg-blue-900 text-white text-xs";
-                bi.className = "flex-1 py-2 rounded-lg font-bold text-gray-500 text-xs";
+                menu.classList.add('translate-x-full');
+                setTimeout(() => hide('mobile-menu'), 300);
             }
         };
 
-        document.getElementById('pImgFile').addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                const reader = new FileReader();
-                reader.readAsDataURL(e.target.files[0]);
-                reader.onload = () => {
-                    tempImg = reader.result;
-                    document.getElementById('pPreview').classList.remove('hidden');
-                    document.getElementById('pPreview').querySelector('img').src = tempImg;
-                };
+        window.closeModal = (id) => hide(id);
+
+        // --- AUTHENTICATION ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth failed:", err);
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                setupRealtimeListeners();
+                setTimeout(() => {
+                    hide('preloader');
+                    show('app');
+                }, 1000);
             }
         });
 
-        window.scrollToProducts = () => document.getElementById('productList').scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 5000);
+        // --- FIRESTORE LISTENERS ---
+        const setupRealtimeListeners = () => {
+            if (!user) return;
+
+            const prodRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+            onSnapshot(prodRef, (snapshot) => {
+                products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProducts();
+                renderInventory();
+            }, (err) => console.error("Prods err:", err));
+
+            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
+            onSnapshot(settingsRef, (snapshot) => {
+                if(snapshot.exists()) {
+                    siteSettings = snapshot.data();
+                    updateBrandUI();
+                }
+            }, (err) => console.error("Settings err:", err));
+
+            const ordersRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+            onSnapshot(ordersRef, (snapshot) => {
+                orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderOrders();
+            }, (err) => console.error("Orders err:", err));
+        };
+
+        // --- APP LOGIC ---
+        const updateBrandUI = () => {
+            if(siteSettings.logo) {
+                $('header-logo').src = siteSettings.logo;
+                $('current-logo-preview').src = siteSettings.logo;
+                let link = document.querySelector("link[rel~='icon']");
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    document.getElementsByTagName('head')[0].appendChild(link);
+                }
+                link.href = siteSettings.logo;
+            }
+        };
+
+        const renderProducts = () => {
+            const featuredContainer = $('featured-products');
+            const shopContainer = $('shop-products');
+            
+            // Filter only available products for the shop
+            const availableProducts = products.filter(p => p.isAvailable !== false);
+
+            const html = availableProducts.map(p => `
+                <div class="glass-card overflow-hidden group">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="${p.image || 'https://via.placeholder.com/300'}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                        <div class="absolute top-4 right-4 bg-[#001f3f] px-3 py-1 rounded-full text-yellow-400 font-bold text-sm">
+                            ₹${p.price}
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h4 class="text-xl font-serif mb-2">${p.name}</h4>
+                        <p class="text-xs text-slate-400 mb-4 line-clamp-2">${p.description || ''}</p>
+                        <button onclick="addToCart('${p.id}')" class="w-full py-3 rounded-2xl border border-yellow-400/30 hover:bg-yellow-400 hover:text-[#001f3f] transition font-bold">
+                            <i class="fa-solid fa-cart-plus mr-2"></i> Add to Bag
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            featuredContainer.innerHTML = html;
+            shopContainer.innerHTML = html;
+        };
+
+        // NEW: Inventory Management Renderer
+        const renderInventory = () => {
+            const container = $('admin-inventory-list');
+            container.innerHTML = products.map(p => `
+                <div class="bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col gap-4">
+                    <div class="flex gap-4 items-center">
+                        <img src="${p.image}" class="w-16 h-16 rounded-xl object-cover">
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-sm">${p.name}</h4>
+                            <p class="text-yellow-400 text-xs font-bold">₹${p.price}</p>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="openEditProductModal('${p.id}')" class="text-blue-400 p-2 hover:bg-blue-400/10 rounded-lg text-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" class="text-red-400 p-2 hover:bg-red-400/10 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-500">Status</span>
+                        <button onclick="toggleProductAvailability('${p.id}', ${p.isAvailable !== false})" 
+                                class="px-4 py-1 rounded-full text-[10px] font-bold transition ${p.isAvailable !== false ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+                            ${p.isAvailable !== false ? 'IN STOCK' : 'OUT OF STOCK'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.addToCart = (pid) => {
+            const product = products.find(p => p.id === pid);
+            if (!product) return;
+            const existing = cart.find(item => item.id === pid);
+            if (existing) { existing.qty++; } else { cart.push({ ...product, qty: 1 }); }
+            updateCartUI();
+        };
+
+        const updateCartUI = () => {
+            const count = cart.reduce((acc, item) => acc + item.qty, 0);
+            $('cart-count').innerText = count;
+            const container = $('cart-items');
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 bg-white/5 rounded-3xl"><p class="text-slate-400">Your bag is empty.</p></div>`;
+            } else {
+                container.innerHTML = cart.map((item, idx) => `
+                    <div class="glass-card p-4 flex items-center gap-4">
+                        <img src="${item.image}" class="w-20 h-20 rounded-xl object-cover">
+                        <div class="flex-grow">
+                            <h4 class="font-serif">${item.name}</h4>
+                            <p class="text-yellow-400 font-bold text-sm">₹${item.price} <span class="text-slate-500 text-xs font-normal ml-2">x ${item.qty}</span></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${idx}, -1)" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10">-</button>
+                            <button onclick="changeQty(${idx}, 1)" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            updateCartTotal();
+        };
+
+        window.changeQty = (idx, delta) => {
+            cart[idx].qty += delta;
+            if (cart[idx].qty <= 0) cart.splice(idx, 1);
+            updateCartUI();
+        };
+
+        window.updateCartTotal = () => {
+            const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const deliveryType = $('delivery-type').value;
+            const fee = deliveryType === 'courier' ? 30 : 0;
+            const total = subtotal + fee;
+            $('summary-subtotal').innerText = `₹${subtotal}`;
+            $('summary-total').innerText = `₹${total}`;
+            return { subtotal, fee, total };
+        };
+
+        window.showCheckoutModal = () => {
+            if (cart.length === 0) return;
+            show('checkout-modal');
+        };
+
+        $('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!user) return;
+            const { subtotal, fee, total } = updateCartTotal();
+            const orderId = 'RA' + Math.random().toString(36).substr(2, 5).toUpperCase();
+            const orderData = {
+                orderId,
+                items: cart,
+                total,
+                packingFee: fee,
+                customer: {
+                    name: $('c-name').value,
+                    phone: $('c-phone').value,
+                    city: $('c-city').value,
+                    state: $('c-state').value,
+                    pin: $('c-pin').value,
+                    address: $('c-address').value
+                },
+                status: 'Pending',
+                timestamp: Timestamp.now(),
+                userId: user.uid
+            };
+            try {
+                const orderRef = collection(db, 'artifacts', appId, 'public', 'data', 'orders');
+                await addDoc(orderRef, orderData);
+                const dateStr = new Date().toLocaleString();
+                const itemsList = cart.map(item => `• *${item.name}* (x${item.qty}) - ₹${item.price * item.qty}`).join('\n');
+                const waMessage = `📦 *NEW ORDER - ROYAL AQUA*
+━━━━━━━━━━━━━━━━━━
+🆔 *Order ID:* ${orderId}
+📅 *Date:* ${dateStr}
+
+👤 *Customer Details:*
+• *Name:* ${orderData.customer.name}
+• *Phone:* ${orderData.customer.phone}
+• *City/Vill:* ${orderData.customer.city}
+• *State:* ${orderData.customer.state}
+• *Pin Code:* ${orderData.customer.pin}
+• *Address:* ${orderData.customer.address}
+
+🐠 *Items Ordered:*
+${itemsList}
+${fee > 0 ? `• *Packing/Courier Fee:* ₹${fee}\n` : ''}
+💰 *TOTAL AMOUNT: ₹${total}*
+━━━━━━━━━━━━━━━━━━
+_Please confirm my order. Thank you!_`;
+                const waUrl = `https://wa.me/919051098057?text=${encodeURIComponent(waMessage)}`;
+                cart = [];
+                updateCartUI();
+                closeModal('checkout-modal');
+                navigate('history');
+                window.open(waUrl, '_blank');
+            } catch (err) { console.error("Order failed:", err); }
+        });
+
+        const renderOrders = () => {
+            const myOrders = orders.filter(o => o.userId === user.uid);
+            const historyContainer = $('orders-list');
+            if (myOrders.length === 0) {
+                historyContainer.innerHTML = `<p class="text-slate-500 italic">No orders found.</p>`;
+            } else {
+                historyContainer.innerHTML = myOrders.map(o => `
+                    <div class="glass-card p-6 border-l-4 ${o.status === 'Completed' ? 'border-green-500' : 'border-yellow-400'}">
+                        <div class="flex justify-between mb-2">
+                            <span class="font-bold text-yellow-400">${o.orderId}</span>
+                            <span class="text-xs px-3 py-1 rounded-full bg-white/5">${o.status}</span>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-4">${o.timestamp.toDate().toLocaleDateString()}</p>
+                        <p class="font-bold">Total: ₹${o.total}</p>
+                    </div>
+                `).join('');
+            }
+            const adminContainer = $('admin-orders-list');
+            adminContainer.innerHTML = orders.map(o => `
+                <div class="p-6 border border-white/10 rounded-3xl bg-white/5 mb-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg">${o.customer.name}</h4>
+                            <p class="text-sm text-slate-400">${o.customer.phone} | ${o.customer.city}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-yellow-400 font-bold">${o.orderId}</span>
+                            <p class="text-xs">₹${o.total}</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 p-4 rounded-xl mb-4 text-xs">
+                        ${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="updateOrderStatus('${o.id}', 'Confirmed')" class="px-4 py-2 bg-blue-600 rounded-lg text-xs">Confirm</button>
+                        <button onclick="updateOrderStatus('${o.id}', 'Completed')" class="px-4 py-2 bg-green-600 rounded-lg text-xs">Mark Done</button>
+                        <button onclick="deleteOrder('${o.id}')" class="px-4 py-2 bg-red-600/30 text-red-400 rounded-lg text-xs">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.openAdmin = () => show('admin-pass-modal');
+        window.verifyAdmin = () => {
+            const pass = $('admin-password').value;
+            if(pass === "00/8/12BA") { closeModal('admin-pass-modal'); navigate('admin'); } else { $('admin-password').value = ''; }
+        };
+
+        window.updateOrderStatus = async (id, status) => {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+            await updateDoc(docRef, { status });
+        };
+
+        window.deleteOrder = async (id) => {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'orders', id);
+            await deleteDoc(docRef);
+        };
+
+        // NEW: Inventory Actions
+        window.deleteProduct = async (id) => {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', id);
+            await deleteDoc(docRef);
+        };
+
+        window.toggleProductAvailability = async (id, currentStatus) => {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', id);
+            await updateDoc(docRef, { isAvailable: !currentStatus });
+        };
+
+        window.openEditProductModal = (id) => {
+            const p = products.find(item => item.id === id);
+            if(!p) return;
+            $('edit-p-id').value = p.id;
+            $('edit-p-name').value = p.name;
+            $('edit-p-price').value = p.price;
+            $('edit-p-desc').value = p.description || '';
+            show('edit-product-modal');
+        };
+
+        $('edit-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = $('edit-p-id').value;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'products', id);
+            await updateDoc(docRef, {
+                name: $('edit-p-name').value,
+                price: parseFloat($('edit-p-price').value),
+                description: $('edit-p-desc').value
+            });
+            closeModal('edit-product-modal');
+        });
+
+        $('add-product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = $('p-image').files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const prodData = {
+                    name: $('p-name').value,
+                    price: parseFloat($('p-price').value),
+                    description: $('p-desc').value,
+                    image: reader.result,
+                    isAvailable: true, // Default to available
+                    timestamp: Timestamp.now()
+                };
+                try {
+                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+                    await addDoc(colRef, prodData);
+                    $('add-product-form').reset();
+                } catch (err) { console.error("Add prod err:", err); }
+            };
+        });
+
+        window.uploadLogo = (event) => {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general');
+                await setDoc(settingsRef, { logo: reader.result }, { merge: true });
+            };
+        };
+
+        window.onload = initAuth;
     </script>
 </body>
 </html>
